@@ -1,0 +1,20 @@
+package repositories
+
+import (
+	"context"
+	"time"
+
+	"github.com/google/uuid"
+	"coffee-tracker-backend/internal/domain/entities"
+)
+
+type CoffeeEntryRepository interface {
+	Create(ctx context.Context, entry *entities.CoffeeEntry) error
+	GetByID(ctx context.Context, id uuid.UUID) (*entities.CoffeeEntry, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*entities.CoffeeEntry, error)
+	GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error)
+	Update(ctx context.Context, entry *entities.CoffeeEntry) error
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	GetStats(ctx context.Context, userID uuid.UUID) (*entities.CoffeeStats, error)
+	GetCount(ctx context.Context, userID uuid.UUID) (int, error)
+}
