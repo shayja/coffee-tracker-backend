@@ -59,7 +59,7 @@ go run cmd/server/main.go
 
 - `GET /health` - Health check
 - `POST /api/v1/entries` - Create coffee entry
-- `GET /api/v1/entries?limit=20&offset=0` - Get coffee entries
+- `GET /api/v1/entries?date=2025-08-12limit=20&offset=0` - Get coffee entries
 - `GET /api/v1/stats` - Get coffee statistics
 
 ### Sample Request
@@ -69,13 +69,8 @@ go run cmd/server/main.go
 curl -X POST http://localhost:8080/api/v1/entries \
   -H "Content-Type: application/json" \
   -d '{
-    "coffee_type": "Espresso",
-    "size": "Single",
-    "caffeine_mg": 75,
     "notes": "Perfect morning coffee",
-    "location": "Local Café",
-    "price": 3.50,
-    "rating": 5
+    "timestamp": {current_date_time}
   }'
 ```
 

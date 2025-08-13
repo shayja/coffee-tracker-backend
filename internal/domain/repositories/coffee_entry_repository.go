@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/domain/entities"
+
+	"github.com/google/uuid"
 )
 
 type CoffeeEntryRepository interface {

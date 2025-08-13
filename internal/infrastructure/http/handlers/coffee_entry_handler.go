@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/usecases"
+
+	"github.com/google/uuid"
 )
 
 type CoffeeEntryHandler struct {
@@ -65,13 +66,14 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	dateStr := r.URL.Query().Get("date")
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
 	limit, _ := strconv.Atoi(limitStr)
 	offset, _ := strconv.Atoi(offsetStr)
 
-	entries, err := h.getEntriesUseCase.Execute(r.Context(), userID, limit, offset)
+	entries, err := h.getEntriesUseCase.Execute(r.Context(), userID, &dateStr, limit, offset)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

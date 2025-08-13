@@ -3,9 +3,10 @@ package usecases
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+
+	"github.com/google/uuid"
 )
 
 type GetCoffeeEntriesUseCase struct {
@@ -18,7 +19,7 @@ func NewGetCoffeeEntriesUseCase(coffeeRepo repositories.CoffeeEntryRepository) *
 	}
 }
 
-func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*entities.CoffeeEntry, error) {
+func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, date *string, limit, offset int) ([]*entities.CoffeeEntry, error) {
 	if limit <= 0 {
 		limit = 20 // default limit
 	}

@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+
+	"github.com/google/uuid"
 )
 
 type CoffeeEntryRepositoryImpl struct {
@@ -20,20 +21,15 @@ func NewCoffeeEntryRepositoryImpl(db *sql.DB) repositories.CoffeeEntryRepository
 
 func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.CoffeeEntry) error {
 	query := `
-		INSERT INTO coffee_entries (id, user_id, coffee_type, size, caffeine_mg, notes, location, price, rating, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO coffee_entries (id, user_id, notes, timestamp, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
 	`
 	
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
 		entry.UserID,
-		entry.CoffeeType,
-		entry.Size,
-		entry.Caffeine,
 		entry.Notes,
-		entry.Location,
-		entry.Price,
-		entry.Rating,
+		entry.Timestamp,
 		entry.CreatedAt,
 		entry.UpdatedAt,
 	)
@@ -43,7 +39,7 @@ func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.
 
 func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, coffee_type, size, caffeine_mg, notes, location, price, rating, created_at, updated_at
+		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE id = $1
 	`
@@ -52,13 +48,8 @@ func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&entry.ID,
 		&entry.UserID,
-		&entry.CoffeeType,
-		&entry.Size,
-		&entry.Caffeine,
 		&entry.Notes,
-		&entry.Location,
-		&entry.Price,
-		&entry.Rating,
+		&entry.Timestamp,
 		&entry.CreatedAt,
 		&entry.UpdatedAt,
 	)
@@ -72,7 +63,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 
 func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, coffee_type, size, caffeine_mg, notes, location, price, rating, created_at, updated_at
+		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -91,13 +82,8 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 		err := rows.Scan(
 			&entry.ID,
 			&entry.UserID,
-			&entry.CoffeeType,
-			&entry.Size,
-			&entry.Caffeine,
 			&entry.Notes,
-			&entry.Location,
-			&entry.Price,
-			&entry.Rating,
+			&entry.Timestamp,
 			&entry.CreatedAt,
 			&entry.UpdatedAt,
 		)
@@ -112,7 +98,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 
 func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, coffee_type, size, caffeine_mg, notes, location, price, rating, created_at, updated_at
+		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
 		ORDER BY created_at DESC
@@ -130,13 +116,8 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context,
 		err := rows.Scan(
 			&entry.ID,
 			&entry.UserID,
-			&entry.CoffeeType,
-			&entry.Size,
-			&entry.Caffeine,
 			&entry.Notes,
-			&entry.Location,
-			&entry.Price,
-			&entry.Rating,
+			&entry.Timestamp,
 			&entry.CreatedAt,
 			&entry.UpdatedAt,
 		)
@@ -152,19 +133,14 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context,
 func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.CoffeeEntry) error {
 	query := `
 		UPDATE coffee_entries 
-		SET coffee_type = $2, size = $3, caffeine_mg = $4, notes = $5, location = $6, price = $7, rating = $8, updated_at = $9
+		SET notes = $2, timestamp = $3, updated_at = $4
 		WHERE id = $1
 	`
 	
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
-		entry.CoffeeType,
-		entry.Size,
-		entry.Caffeine,
 		entry.Notes,
-		entry.Location,
-		entry.Price,
-		entry.Rating,
+		entry.Timestamp,
 		time.Now(),
 	)
 	
@@ -181,9 +157,9 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 	query := `
 		SELECT 
 			COUNT(*) as total_entries,
-			COALESCE(SUM(caffeine_mg), 0) as total_caffeine,
-			COALESCE(AVG(rating), 0) as average_rating,
-			COALESCE(SUM(price), 0) as total_spent,
+			--COALESCE(SUM(caffeine_mg), 0) as total_caffeine,
+			--COALESCE(AVG(rating), 0) as average_rating,
+			--COALESCE(SUM(price), 0) as total_spent,
 			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '7 days') as entries_this_week,
 			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '30 days') as entries_this_month
 		FROM coffee_entries 
@@ -193,9 +169,9 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 	var stats entities.CoffeeStats
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&stats.TotalEntries,
-		&stats.TotalCaffeine,
-		&stats.AverageRating,
-		&stats.TotalSpent,
+		// &stats.TotalCaffeine,
+		// &stats.AverageRating,
+		// &stats.TotalSpent,
 		&stats.EntriesThisWeek,
 		&stats.EntriesThisMonth,
 	)
@@ -203,7 +179,7 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 	if err != nil {
 		return nil, err
 	}
-
+/*
 	// Get favorite coffee type
 	favoriteQuery := `
 		SELECT coffee_type
@@ -223,7 +199,7 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 	if favoriteCoffee.Valid {
 		stats.FavoriteCoffee = favoriteCoffee.String
 	}
-	
+*/	
 	return &stats, nil
 }
 
