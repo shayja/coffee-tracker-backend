@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+
+	"github.com/google/uuid"
 )
 
 type UserRepositoryImpl struct {
@@ -36,7 +37,7 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user *entities.User) er
 
 func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error) {
 	query := `
-		SELECT id, email, name, created_at, updated_at
+		SELECT id, email, name, status_id, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -46,6 +47,7 @@ func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entiti
 		&user.ID,
 		&user.Email,
 		&user.Name,
+		&user.StatusID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -59,7 +61,7 @@ func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entiti
 
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	query := `
-		SELECT id, email, name, created_at, updated_at
+		SELECT id, email, name, status_id, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -69,6 +71,7 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*ent
 		&user.ID,
 		&user.Email,
 		&user.Name,
+		&user.StatusID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

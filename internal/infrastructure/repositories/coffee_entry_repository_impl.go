@@ -21,8 +21,8 @@ func NewCoffeeEntryRepositoryImpl(db *sql.DB) repositories.CoffeeEntryRepository
 
 func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.CoffeeEntry) error {
 	query := `
-		INSERT INTO coffee_entries (id, user_id, notes, timestamp, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO coffee_entries (id, user_id, notes, timestamp)
+		VALUES ($1, $2, $3, $4)
 	`
 	
 	_, err := r.db.ExecContext(ctx, query,
@@ -30,8 +30,6 @@ func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.
 		entry.UserID,
 		entry.Notes,
 		entry.Timestamp,
-		entry.CreatedAt,
-		entry.UpdatedAt,
 	)
 	
 	return err

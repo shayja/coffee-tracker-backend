@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	Env		 	string
 	Port        string
 	DatabaseURL string
 	SupabaseURL string
@@ -14,11 +15,12 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
+		Env:         getEnv("ENV", "dev"),
 		Port:        getEnv("PORT", "8080"),
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		SupabaseURL: getEnv("SUPABASE_URL", ""),
 		SupabaseKey: getEnv("SUPABASE_KEY", ""),
-		JWTSecret:   getEnv("JWT_SECRET", "your-secret-key"),
+		JWTSecret:   getEnv("JWT_SECRET", ""),
 	}
 }
 
