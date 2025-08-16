@@ -67,11 +67,16 @@ func main() {
 
 	// API routes (auth + user status middleware)
 	api := router.PathPrefix("/api/v1").Subrouter()
+	// Attach logger first, so it runs before everything
+	api.Use(middleware.RequestLogger)
+
+	// User authentication middleware
 	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+
+	// User status middleware (e.g., check if user is active)
 	api.Use(middleware.UserMiddleware(userRepo, 5*time.Minute))
 
 
-	
 	// Access token endpoint
 	api.HandleFunc("/auth/token", authHandler.CreateAuthToken).Methods("GET")
 
