@@ -15,6 +15,7 @@ type UserStatus struct {
 type User struct {
 	ID        uuid.UUID  `db:"id" json:"id"`
 	Email     string     `db:"email" json:"email"`
+	Mobile    string     `db:"mobile" json:"mobile"`
 	Name      string     `db:"name" json:"name"`
 	StatusID  int        `db:"status_id" json:"status_id"`
 	//Status    string    `db:"status" json:"status"` // joined value

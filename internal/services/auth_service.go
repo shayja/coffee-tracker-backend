@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"time"
 
 	"coffee-tracker-backend/internal/domain/repositories"
@@ -19,6 +20,33 @@ type AuthService struct {
 func NewAuthService(authRepo repositories.AuthRepository) *AuthService {
 	return &AuthService{authRepo: authRepo}
 }
+
+
+func (s *AuthService) GenerateOTP(ctx context.Context, userID uuid.UUID) (string, error) {
+	otp := fmt.Sprintf("%06d", randInt(100000, 999999)) // 6-digit code
+	expiresAt := time.Now().Add(5 * time.Minute)
+
+	err := s.authRepo.SaveOTP(ctx, userID.String(), otp, expiresAt)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: send OTP via email/SMS (integration needed)
+	return otp, nil
+}
+
+func (s *AuthService) ValidateOTP(ctx context.Context, userID uuid.UUID, otp string) (bool, error) {
+	valid, err := s.authRepo.GetValidOTP(ctx, userID.String(), otp)
+	if err != nil || !valid {
+		return false, err
+	}
+
+	// Invalidate OTP after use
+	_ = s.authRepo.InvalidateOTP(ctx, userID.String(), otp)
+
+	return true, nil
+}
+
 
 func (s *AuthService) GenerateRefreshToken(ctx context.Context, userID uuid.UUID) (string, error) {
     tokenBytes := make([]byte, 32)
@@ -68,3 +96,11 @@ func generateSecureToken(length int) (string, error) {
 	}
 	return hex.EncodeToString(bytes), nil
 }
+
+// helper for random int
+func randInt(min, max int) int {
+	b := make([]byte, 1)
+	rand.Read(b)
+	return min + int(b[0])%(max-min+1)
+}
+

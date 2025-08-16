@@ -2,12 +2,23 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 // AuthRepository defines the contract for managing authentication-related data.
 type AuthRepository interface {
+
+	// SaveOTP saves a one-time password (OTP) for a user with an expiration time.
+	SaveOTP(ctx context.Context, userID string, otp string, expiresAt time.Time) error
+
+	// GetValidOTP retrieves a valid OTP for a user, checking if it has not expired.
+	GetValidOTP(ctx context.Context, userID string, otp string) (bool, error)
+
+	// InvalidateOTP marks an OTP as invalid, preventing its future use.
+	InvalidateOTP(ctx context.Context, userID string, otp string) error
+
 	// SaveRefreshToken inserts or replaces the refresh token for a user
 	SaveRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt int64) error
 

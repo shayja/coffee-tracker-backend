@@ -54,7 +54,9 @@ func main() {
 	healthHandler := handlers.NewHealthHandler()
 	// Initialize auth service
 	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db))
-	authHandler := handlers.NewAuthHandler(cfg.JWTSecret, authService)
+	userService := services.NewUserService(userRepo)
+	authHandler := handlers.NewAuthHandler(cfg.JWTSecret, authService, userService)
+
 
 	// Setup router
 	router := mux.NewRouter()
@@ -65,30 +67,33 @@ func main() {
 	// Health endpoint (no auth required)
 	router.HandleFunc("/health", healthHandler.Health).Methods("GET")
 
-	// API routes (auth + user status middleware)
+	// API base router
 	api := router.PathPrefix("/api/v1").Subrouter()
 	// Attach logger first, so it runs before everything
 	api.Use(middleware.RequestLogger)
 
+	// ----------------- Public routes (NO auth) -----------------
+	api.HandleFunc("/auth/request-otp", authHandler.RequestOTP).Methods("POST")
+	api.HandleFunc("/auth/verify-otp", authHandler.VerifyOTP).Methods("POST")
+
+	// ----------------- Protected routes -----------------
+	protected := api.NewRoute().Subrouter()
+
 	// User authentication middleware
-	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 
 	// User status middleware (e.g., check if user is active)
-	api.Use(middleware.UserMiddleware(userRepo, 5*time.Minute))
+	protected.Use(middleware.UserMiddleware(userRepo, 5*time.Minute))
 
+	// Auth routes (protected)
+	protected.HandleFunc("/auth/token", authHandler.CreateAuthToken).Methods("GET")
+	protected.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
 
-	// Access token endpoint
-	api.HandleFunc("/auth/token", authHandler.CreateAuthToken).Methods("GET")
-
-	// Refresh token endpoint
-	api.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
-
-
-	// Coffee entries routes
-	api.HandleFunc("/entries", coffeeHandler.CreateEntry).Methods("POST")
-	api.HandleFunc("/entries", coffeeHandler.GetEntries).Methods("GET")
-	api.HandleFunc("/entries/{id}", coffeeHandler.DeleteEntry).Methods("DELETE")
-	api.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
+	// Coffee entries routes (protected)
+	protected.HandleFunc("/entries", coffeeHandler.CreateEntry).Methods("POST")
+	protected.HandleFunc("/entries", coffeeHandler.GetEntries).Methods("GET")
+	protected.HandleFunc("/entries/{id}", coffeeHandler.DeleteEntry).Methods("DELETE")
+	protected.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
 
 	// Dev-only: print JWT
 	if cfg.Env == "dev" {
