@@ -11,6 +11,7 @@ import (
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
 	"coffee-tracker-backend/internal/infrastructure/http/middleware"
 	"coffee-tracker-backend/internal/infrastructure/repositories"
+	"coffee-tracker-backend/internal/services"
 	"coffee-tracker-backend/internal/usecases"
 
 	"github.com/google/uuid"
@@ -51,6 +52,9 @@ func main() {
 		getCoffeeStatsUseCase,
 	)
 	healthHandler := handlers.NewHealthHandler()
+	// Initialize auth service
+	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db))
+	authHandler := handlers.NewAuthHandler(cfg.JWTSecret, authService)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -65,6 +69,15 @@ func main() {
 	api := router.PathPrefix("/api/v1").Subrouter()
 	api.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	api.Use(middleware.UserMiddleware(userRepo, 5*time.Minute))
+
+
+	
+	// Access token endpoint
+	api.HandleFunc("/auth/token", authHandler.CreateAuthToken).Methods("GET")
+
+	// Refresh token endpoint
+	api.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
+
 
 	// Coffee entries routes
 	api.HandleFunc("/entries", coffeeHandler.CreateEntry).Methods("POST")

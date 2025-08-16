@@ -105,3 +105,21 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
+
+func (r *AuthRepositoryImpl) GetUserIDByRefreshToken(ctx context.Context, refreshToken string) (uuid.UUID, error) {
+    var userID uuid.UUID
+    query := `
+        SELECT user_id
+        FROM user_refresh_tokens
+        WHERE token = $1 AND expires_at > NOW()
+        LIMIT 1
+    `
+    err := r.db.QueryRowContext(ctx, query, refreshToken).Scan(&userID)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return uuid.Nil, repositories.ErrNotFound
+        }
+        return uuid.Nil, err
+    }
+    return userID, nil
+}
