@@ -47,9 +47,12 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to generate OTP", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Generated OTP for user %s: %s", user.ID, otp)
 
 	// For development, return OTP in response (REMOVE in production!)
-	json.NewEncoder(w).Encode(map[string]string{"otp": otp})
+	//json.NewEncoder(w).Encode(map[string]string{"otp": otp})
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "OTP sent successfully"})
 }
 
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
