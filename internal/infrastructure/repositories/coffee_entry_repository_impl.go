@@ -94,15 +94,16 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 	return entries, rows.Err()
 }
 
-func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error) {
+func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, limit int, offset int, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error) {
 	query := `
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
-		WHERE user_id = $1 AND created_at >= $2 AND created_at <= $3
+		WHERE user_id = $1 AND created_at >= $4 AND created_at <= $5
 		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
 	`
 	
-	rows, err := r.db.QueryContext(ctx, query, userID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}

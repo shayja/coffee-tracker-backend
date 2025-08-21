@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/infrastructure/database"
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
@@ -14,7 +13,6 @@ import (
 	"coffee-tracker-backend/internal/services"
 	"coffee-tracker-backend/internal/usecases"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -96,9 +94,9 @@ func main() {
 	protected.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
 
 	// Dev-only: print JWT
-	if cfg.Env == "dev" {
-		printJWT(cfg.JWTSecret, uuid.MustParse("550e8400-e29b-41d4-a716-446655440000"))
-	}
+	// if cfg.Env == "dev" {
+	// 	printJWT(cfg.JWTSecret, uuid.MustParse("550e8400-e29b-41d4-a716-446655440000"))
+	// }
 
 	log.Printf("🚀 Coffee Tracker API starting on port %s", cfg.Port)
 	log.Printf("📊 Health check: http://localhost:%s/health", cfg.Port)
@@ -125,10 +123,11 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 // printJWT generates and prints a JWT token for dev testing
+/*
 func printJWT(secret string, userID uuid.UUID) {
 	token, err := auth.GenerateJWT(secret, userID)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Print("Dev JWT token:", token)
-}
+}*/
