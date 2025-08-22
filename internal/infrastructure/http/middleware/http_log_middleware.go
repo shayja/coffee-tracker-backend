@@ -22,6 +22,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			r.URL.Path,
 			lrw.statusCode,
 			duration,
+			
 		)
 	})
 }

@@ -47,9 +47,7 @@ func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	req.UserID = userID
-
-	entry, err := h.createUseCase.Execute(r.Context(), req)
+	entry, err := h.createUseCase.Execute(r.Context(), req, userID)
 	if err != nil {
 		switch err {
 		case usecases.ErrInvalidInput:

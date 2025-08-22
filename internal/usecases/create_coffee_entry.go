@@ -21,18 +21,11 @@ func NewCreateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 }
 
 type CreateCoffeeEntryRequest struct {
-	UserID     uuid.UUID `json:"user_id"`
-	// CoffeeType string    `json:"coffee_type"`
-	// Size       string    `json:"size"`
-	// Caffeine   int       `json:"caffeine_mg"`
-	Notes      string    `json:"notes"`
-	// Location   string    `json:"location"`
-	// Price      float64   `json:"price"`
-	// Rating     int       `json:"rating"`
-	Timestamp  time.Time `json:"timestamp"`
+    Notes     string    `json:"notes"`
+    Timestamp time.Time `json:"timestamp"`
 }
 
-func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest) (*entities.CoffeeEntry, error) {
+func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
 	// if req.CoffeeType == "" {
 	// 	return nil, ErrInvalidInput
 	// }
@@ -43,7 +36,7 @@ func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffe
 
 	entry := &entities.CoffeeEntry{
 		ID:         uuid.New(),
-		UserID:     req.UserID,
+		UserID:     userID,
 		// CoffeeType: req.CoffeeType,
 		// Size:       req.Size,
 		// Caffeine:   req.Caffeine,
