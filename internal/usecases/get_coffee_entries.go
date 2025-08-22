@@ -35,6 +35,10 @@ func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID
 	if err != nil {
 		return nil, ErrInternalError
 	}
+	// If entries is nil, return empty slice instead
+	if entries == nil {
+		return []*entities.CoffeeEntry{}, nil
+	}
 
 	return entries, nil
 }

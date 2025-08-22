@@ -79,7 +79,6 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	// Get entry ID from path parameter
 	entryID, err := getEntryIDByRoute(r, w)
 	if err != nil {
@@ -126,8 +125,6 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(entries)
 }
-
-
 
 func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from context

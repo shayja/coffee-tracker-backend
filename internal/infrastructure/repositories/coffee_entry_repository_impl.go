@@ -57,6 +57,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE id = $1
+		LIMIT 1
 	`
 	
 	var entry entities.CoffeeEntry
@@ -81,7 +82,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE user_id = $1
-		ORDER BY created_at DESC
+		ORDER BY timestamp ASC
 		LIMIT $2 OFFSET $3
 	`
 	
@@ -115,8 +116,8 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context,
 	query := `
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
-		WHERE user_id = $1 AND created_at >= $4 AND created_at <= $5
-		ORDER BY created_at DESC
+		WHERE user_id = $1 AND timestamp >= $4 AND timestamp <= $5
+		ORDER BY timestamp ASC
 		LIMIT $2 OFFSET $3
 	`
 	
@@ -159,8 +160,8 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 			--COALESCE(SUM(caffeine_mg), 0) as total_caffeine,
 			--COALESCE(AVG(rating), 0) as average_rating,
 			--COALESCE(SUM(price), 0) as total_spent,
-			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '7 days') as entries_this_week,
-			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '30 days') as entries_this_month
+			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '7 days') as entries_this_week,
+			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '30 days') as entries_this_month
 		FROM coffee_entries 
 		WHERE user_id = $1
 	`
