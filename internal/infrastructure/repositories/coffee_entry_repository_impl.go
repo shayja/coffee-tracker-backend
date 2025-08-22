@@ -35,6 +35,23 @@ func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.
 	return err
 }
 
+func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.CoffeeEntry) error {
+	query := `
+		UPDATE coffee_entries 
+		SET notes = $2, timestamp = $3, updated_at = $4
+		WHERE id = $1
+	`
+	
+	_, err := r.db.ExecContext(ctx, query,
+		entry.ID,
+		entry.Notes,
+		entry.Timestamp,
+		time.Now(),
+	)
+	
+	return err
+}
+
 func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.CoffeeEntry, error) {
 	query := `
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
@@ -127,23 +144,6 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context,
 	}
 	
 	return entries, rows.Err()
-}
-
-func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.CoffeeEntry) error {
-	query := `
-		UPDATE coffee_entries 
-		SET notes = $2, timestamp = $3, updated_at = $4
-		WHERE id = $1
-	`
-	
-	_, err := r.db.ExecContext(ctx, query,
-		entry.ID,
-		entry.Notes,
-		entry.Timestamp,
-		time.Now(),
-	)
-	
-	return err
 }
 
 func (r *CoffeeEntryRepositoryImpl) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {

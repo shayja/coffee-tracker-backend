@@ -38,6 +38,7 @@ func main() {
 
 	// Initialize use cases
 	createCoffeeUseCase := usecases.NewCreateCoffeeEntryUseCase(coffeeRepo)
+	editCoffeeUseCase := usecases.NewEditCoffeeEntryUseCase(coffeeRepo)
 	deleteCoffeeUseCase := usecases.NewDeleteCoffeeEntryUseCase(coffeeRepo)
 	getCoffeeEntriesUseCase := usecases.NewGetCoffeeEntriesUseCase(coffeeRepo)
 	getCoffeeStatsUseCase := usecases.NewGetCoffeeStatsUseCase(coffeeRepo)
@@ -45,6 +46,7 @@ func main() {
 	// Initialize handlers
 	coffeeHandler := handlers.NewCoffeeEntryHandler(
 		createCoffeeUseCase,
+		editCoffeeUseCase,
 		deleteCoffeeUseCase,
 		getCoffeeEntriesUseCase,
 		getCoffeeStatsUseCase,
@@ -88,8 +90,9 @@ func main() {
 	protected.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
 
 	// Coffee entries routes (protected)
-	protected.HandleFunc("/entries", coffeeHandler.CreateEntry).Methods("POST")
 	protected.HandleFunc("/entries", coffeeHandler.GetEntries).Methods("GET")
+	protected.HandleFunc("/entries", coffeeHandler.CreateEntry).Methods("POST")
+	protected.HandleFunc("/entries/{id}", coffeeHandler.EditEntry).Methods("PUT")
 	protected.HandleFunc("/entries/{id}", coffeeHandler.DeleteEntry).Methods("DELETE")
 	protected.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
 
