@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/usecases"
@@ -55,12 +58,22 @@ func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request)
 		switch err {
 		case usecases.ErrInvalidInput:
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case usecases.ErrConflict:
+			http.Error(w, err.Error(), http.StatusConflict)
 		default:
+			// Log the error for debugging
+			log.Printf("CreateEntry error: %v", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
+	// Set Location header with URL to the newly created resource
+	location := fmt.Sprintf("%s/%s", strings.TrimSuffix(r.URL.Path, "/"), entry.ID.String())
+	w.Header().Set("Location", location)
+	
+	// Return 201 Created status
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(entry)
 }

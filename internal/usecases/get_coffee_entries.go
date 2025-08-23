@@ -25,6 +25,9 @@ func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID
 		limit = 50 // default limit
 	}
 
+
+	//log.Printf("GetCoffeeEntriesUseCase: dateStr=%v, tzOffsetMinutes=%v", *dateStr, *tzOffsetMinutes)
+
 	var parsedTime time.Time
 	var err error
 
