@@ -113,10 +113,12 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 }
 
 func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, limit int, offset int, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error) {
+	
 	query := `
 		SELECT id, user_id, notes, timestamp, created_at, updated_at
 		FROM coffee_entries
-		WHERE user_id = $1 AND timestamp >= $4 AND timestamp <= $5
+		WHERE user_id = $1 
+		AND timestamp >= $4 AND timestamp < $5
 		ORDER BY timestamp ASC
 		LIMIT $2 OFFSET $3
 	`

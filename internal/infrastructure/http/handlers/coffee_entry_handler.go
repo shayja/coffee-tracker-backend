@@ -110,13 +110,22 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 	}
 
 	dateStr := r.URL.Query().Get("date")
+	tzOffsetStr := r.URL.Query().Get("tzOffset")
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
 	limit, _ := strconv.Atoi(limitStr)
 	offset, _ := strconv.Atoi(offsetStr)
 
-	entries, err := h.getEntriesUseCase.Execute(r.Context(), userID, &dateStr, limit, offset)
+
+	var tzOffset *int
+	if tzOffsetStr != "" {
+		if offset, err := strconv.Atoi(tzOffsetStr); err == nil {
+			tzOffset = &offset
+		}
+	}
+
+	entries, err := h.getEntriesUseCase.Execute(r.Context(), userID, &dateStr, tzOffset, limit, offset)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
