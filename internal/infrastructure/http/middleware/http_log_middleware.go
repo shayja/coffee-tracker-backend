@@ -21,8 +21,7 @@ func RequestLogger(next http.Handler) http.Handler {
 			r.RemoteAddr,
 			r.URL.Path,
 			lrw.statusCode,
-			duration,
-			
+			duration,		
 		)
 	})
 }

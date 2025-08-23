@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"coffee-tracker-backend/internal/infrastructure/config"
@@ -62,7 +63,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Apply CORS middleware globally (before auth)
-	router.Use(corsMiddleware)
+	router.Use(middleware.CorsMiddleware)
 
 	// Health endpoint (no auth required)
 	router.HandleFunc("/health", healthHandler.Health).Methods("GET")
@@ -96,41 +97,30 @@ func main() {
 	protected.HandleFunc("/entries/{id}", coffeeHandler.DeleteEntry).Methods("DELETE")
 	protected.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
 
-	// Dev-only: print JWT
-	// if cfg.Env == "dev" {
-	// 	printJWT(cfg.JWTSecret, uuid.MustParse("550e8400-e29b-41d4-a716-446655440000"))
-	// }
-
 	log.Printf("🚀 Coffee Tracker API starting on port %s", cfg.Port)
-	log.Printf("📊 Health check: http://localhost:%s/health", cfg.Port)
-	log.Printf("☕ API endpoints: http://localhost:%s/api/v1/*", cfg.Port)
+
+	// Fly.io specific detection
+	var healthURL, apiURL string
+	
+	if os.Getenv("FLY_APP_NAME") != "" {
+		// Production on Fly.io
+		appName := os.Getenv("FLY_APP_NAME")
+		healthURL = "https://" + appName + ".fly.dev/health"
+		apiURL = "https://" + appName + ".fly.dev/api/v1/*"
+	} else {
+		// Local development
+		healthURL = "http://localhost:" + cfg.Port + "/health"
+		apiURL = "http://localhost:" + cfg.Port + "/api/v1/*"
+	}
+
+	log.Printf("📊 Health check: %s", healthURL)
+	log.Printf("☕ API endpoints: %s", apiURL)
+
+
+
 
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
 }
 
-// corsMiddleware allows cross-origin requests
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if r.Method == "OPTIONS" {
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// printJWT generates and prints a JWT token for dev testing
-/*
-func printJWT(secret string, userID uuid.UUID) {
-	token, err := auth.GenerateJWT(secret, userID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Print("Dev JWT token:", token)
-}*/

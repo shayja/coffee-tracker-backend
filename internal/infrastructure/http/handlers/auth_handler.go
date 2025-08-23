@@ -88,9 +88,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
 	}
-
-	log.Printf("access_token %s", accessToken)
-
+	
 	json.NewEncoder(w).Encode(map[string]string{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
