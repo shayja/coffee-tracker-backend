@@ -144,7 +144,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	log.Printf("Refresh token: %s", body.RefreshToken)
+	// log.Printf("Refresh token: %s", body.RefreshToken)
 
     // Validate & get user ID
     userID, err := h.authService.ValidateRefreshToken(r.Context(), body.RefreshToken)
