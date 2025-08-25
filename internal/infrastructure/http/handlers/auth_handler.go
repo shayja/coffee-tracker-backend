@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -14,6 +16,19 @@ type AuthHandler struct {
 	authService *services.AuthService
     userService *services.UserService
 }
+
+type AuthResponse struct {
+    AccessToken  string `json:"access_token"`
+    RefreshToken string `json:"refresh_token"`
+    User         UserDTO   `json:"user"`
+}
+
+type UserDTO struct {
+    ID     uuid.UUID `json:"id"`
+    Name   string `json:"name"`
+    Mobile string `json:"mobile"`
+}
+
 
 func NewAuthHandler(secret string, authService *services.AuthService, userService *services.UserService) *AuthHandler {
 	if secret == "" {
@@ -89,10 +104,16 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//log.Print(accessToken)
-	json.NewEncoder(w).Encode(map[string]string{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	response := AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User: UserDTO{
+			ID:     user.ID,
+			Name:   user.Name,
+			Mobile: user.Mobile,
+		},
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 

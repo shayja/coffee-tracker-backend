@@ -54,7 +54,7 @@ func main() {
 	)
 	healthHandler := handlers.NewHealthHandler()
 	// Initialize auth service
-	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db))
+	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db), cfg)
 	userService := services.NewUserService(userRepo)
 	authHandler := handlers.NewAuthHandler(cfg.JWTSecret, authService, userService)
 

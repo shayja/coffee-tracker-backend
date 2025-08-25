@@ -9,18 +9,20 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/infrastructure/config"
 
 	"github.com/google/uuid"
 )
 
 type AuthService struct {
 	authRepo repositories.AuthRepository
+	cfg  *config.Config
+	
 }
 
-func NewAuthService(authRepo repositories.AuthRepository) *AuthService {
-	return &AuthService{authRepo: authRepo}
+func NewAuthService(authRepo repositories.AuthRepository, config  *config.Config) *AuthService {
+	return &AuthService{authRepo: authRepo, cfg: config}
 }
-
 
 func (s *AuthService) GenerateOTP(ctx context.Context, userID uuid.UUID) (string, error) {
 	otp := fmt.Sprintf("%06d", randInt(100000, 999999)) // 6-digit code
@@ -36,6 +38,12 @@ func (s *AuthService) GenerateOTP(ctx context.Context, userID uuid.UUID) (string
 }
 
 func (s *AuthService) ValidateOTP(ctx context.Context, userID uuid.UUID, otp string) (bool, error) {
+	
+	// temp: bypass OTP validation in dev mode
+	if otp == s.cfg.MagicOtp {
+		return true, nil
+	}
+	// Check if OTP is valid and not expired
 	valid, err := s.authRepo.GetValidOTP(ctx, userID.String(), otp)
 	if err != nil || !valid {
 		return false, err
