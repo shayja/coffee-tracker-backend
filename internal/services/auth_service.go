@@ -64,7 +64,7 @@ func (s *AuthService) GenerateRefreshToken(ctx context.Context, userID uuid.UUID
 
     refreshToken := hex.EncodeToString(tokenBytes)
 
-    expiresAt := time.Now().Add(30 * 24 * time.Hour).Unix() // int64
+    expiresAt := time.Now().Add(30 * 24 * time.Hour) // int64
     err := s.authRepo.SaveRefreshToken(ctx, userID, refreshToken, expiresAt)
     if err != nil {
         return "", err
@@ -91,7 +91,7 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, userID uuid.UUID) 
 		return "", err
 	}
 	expiresAt := time.Now().Add(30 * 24 * time.Hour)
-	if err := s.authRepo.SaveRefreshToken(ctx, userID, newToken, expiresAt.Unix()); err != nil {
+	if err := s.authRepo.SaveRefreshToken(ctx, userID, newToken, expiresAt); err != nil {
 		return "", err
 	}
 	return newToken, nil
@@ -112,3 +112,12 @@ func randInt(min, max int) int {
 	return min + int(b[0])%(max-min+1)
 }
 
+func (s *AuthService) SaveRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error{
+	return s.authRepo.SaveRefreshToken(ctx, userID, token, expiresAt)
+}
+func (s *AuthService) GetRefreshToken(ctx context.Context, userID uuid.UUID) (string, time.Time, error) {
+	return s.authRepo.GetRefreshToken(ctx, userID)
+}
+func (s *AuthService) DeleteRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	return s.authRepo.DeleteRefreshToken(ctx, userID)
+}

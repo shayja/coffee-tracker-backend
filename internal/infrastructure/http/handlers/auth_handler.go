@@ -3,55 +3,40 @@ package handlers
 import (
 	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/auth"
+	"coffee-tracker-backend/internal/infrastructure/http/dto"
 	"coffee-tracker-backend/internal/services"
 	"encoding/json"
 	"log"
 	"net/http"
-
-	"github.com/google/uuid"
+	"time"
 )
 
 type AuthHandler struct {
-	secret      string
+	jwtService  *auth.JWTService
 	authService *services.AuthService
-    userService *services.UserService
+	userService *services.UserService
 }
 
-type AuthResponse struct {
-    AccessToken  string `json:"access_token"`
-    RefreshToken string `json:"refresh_token"`
-    User         UserDTO   `json:"user"`
-}
-
-type UserDTO struct {
-    ID     uuid.UUID `json:"id"`
-    Name   string `json:"name"`
-    Mobile string `json:"mobile"`
-}
-
-
-func NewAuthHandler(secret string, authService *services.AuthService, userService *services.UserService) *AuthHandler {
-	if secret == "" {
-		log.Fatal("JWT secret is required")
+func NewAuthHandler(jwtService *auth.JWTService, authService *services.AuthService, userService *services.UserService) *AuthHandler {
+	if jwtService == nil {
+		log.Fatal("JWT service is required")
 	}
 	return &AuthHandler{
-		secret:      secret,
+		jwtService:  jwtService,
 		authService: authService,
-        userService: userService,
+		userService: userService,
 	}
 }
 
 func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Mobile string `json:"mobile"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Mobile == "" {
+	var req dto.SendOtpRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Mobile == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	// Lookup user by email (ensure they exist)
-	user, err := h.userService.GetByMobile(r.Context(), body.Mobile)
+	// Lookup user by mobile (ensure they exist)
+	user, err := h.userService.GetByMobile(r.Context(), req.Mobile)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -64,130 +49,217 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Generated OTP for user %s: %s", user.ID, otp)
 
-	// For development, return OTP in response (REMOVE in production!)
-	//json.NewEncoder(w).Encode(map[string]string{"otp": otp})
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "OTP sent successfully"})
 }
 
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Mobile string `json:"mobile"`
-		OTP   string `json:"otp"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	var req dto.VerifyOtpRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.userService.GetByMobile(r.Context(), body.Mobile)
+	user, err := h.userService.GetByMobile(r.Context(), req.Mobile)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
 
-	valid, err := h.authService.ValidateOTP(r.Context(), user.ID, body.OTP)
+	// Validate OTP
+	valid, err := h.authService.ValidateOTP(r.Context(), user.ID, req.OTP)
 	if err != nil || !valid {
 		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
 		return
 	}
 
-	// Issue JWT + refresh token
-	accessToken, err := auth.GenerateJWT(h.secret, user.ID)
+	// Generate tokens
+	accessToken, err := h.jwtService.GenerateAccessToken(user.ID)
 	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 		return
 	}
-	refreshToken, err := h.authService.GenerateRefreshToken(r.Context(), user.ID)
+
+	refreshToken, err := h.jwtService.GenerateRefreshToken(user.ID)
 	if err != nil {
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
 	}
-	//log.Print(accessToken)
-	response := AuthResponse{
+
+	// Save refresh token to database
+	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
+	if err := h.authService.SaveRefreshToken(r.Context(), user.ID, refreshToken, refreshExpiry); err != nil {
+		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	response := dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		User: UserDTO{
+		User: dto.LoggedInUserResponse{
 			ID:     user.ID,
 			Name:   user.Name,
 			Mobile: user.Mobile,
 		},
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req dto.RefreshTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" {
+		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+		return
+	}
 
-func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
-    // Extract user ID from context
-    userID, ok := contextkeys.UserIDFromContext(r.Context())
-    if !ok {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
+	// Validate refresh token
+	claims, err := h.jwtService.ValidateToken(req.RefreshToken)
+	if err != nil {
+		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+		return
+	}
 
-    // Generate access token (short-lived JWT)
-    accessToken, err := auth.GenerateJWT(h.secret, userID)
-    if err != nil {
-        log.Printf("failed to generate JWT: %v", err)
-        http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-        return
-    }
+	// Check if it's a refresh token
+	if !h.jwtService.IsRefreshToken(claims) {
+		http.Error(w, "Not a refresh token", http.StatusUnauthorized)
+		return
+	}
 
-    // Generate refresh token (long-lived, persisted in DB)
-    refreshToken, err := h.authService.GenerateRefreshToken(r.Context(), userID)
-    if err != nil {
-        log.Printf("failed to generate refresh token: %v", err)
-        http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-        return
-    }
+	// Extract user ID
+	userID, err := h.jwtService.ExtractUserIDFromToken(req.RefreshToken)
+	if err != nil {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
 
-    // Return both tokens
-    w.Header().Set("Content-Type", "application/json")
-    if err := json.NewEncoder(w).Encode(map[string]string{
-        "access_token":  accessToken,
-        "refresh_token": refreshToken,
-    }); err != nil {
-        log.Printf("failed to encode response: %v", err)
-    }
+	// Verify refresh token exists in database and matches
+	storedToken, expiresAt, err := h.authService.GetRefreshToken(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Refresh token not found", http.StatusUnauthorized)
+		return
+	}
+
+	if storedToken != req.RefreshToken {
+		http.Error(w, "Refresh token mismatch", http.StatusUnauthorized)
+		return
+	}
+
+	if time.Now().After(expiresAt) {
+		http.Error(w, "Refresh token expired", http.StatusUnauthorized)
+		return
+	}
+
+	// Generate new tokens
+	newAccessToken, err := h.jwtService.GenerateAccessToken(userID)
+	if err != nil {
+		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
+		return
+	}
+
+	newRefreshToken, err := h.jwtService.GenerateRefreshToken(userID)
+	if err != nil {
+		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	// Save new refresh token (rotate)
+	newRefreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
+	if err := h.authService.SaveRefreshToken(r.Context(), userID, newRefreshToken, newRefreshExpiry); err != nil {
+		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	// Return new tokens
+	response := dto.RefreshTokenResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
-// Issue a new access token for authenticated user
-func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-    type requestBody struct {
-        RefreshToken string `json:"refresh_token"`
-    }
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	userID, ok := contextkeys.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-    var body requestBody
-    if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.RefreshToken == "" {
-        http.Error(w, "Missing refresh token", http.StatusUnauthorized)
-        return
-    }
+	// Delete refresh token from database
+	if err := h.authService.DeleteRefreshToken(r.Context(), userID); err != nil {
+		http.Error(w, "Failed to logout", http.StatusInternalServerError)
+		return
+	}
 
-	// log.Printf("Refresh token: %s", body.RefreshToken)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
 
-    // Validate & get user ID
-    userID, err := h.authService.ValidateRefreshToken(r.Context(), body.RefreshToken)
-    if err != nil {
-        http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
-        return
-    }
+func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
+	// Extract user ID from context
+	userID, ok := contextkeys.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-    // Issue new tokens
-    newAccessToken, err := auth.GenerateJWT(h.secret, userID)
-    if err != nil {
-        http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
-        return
-    }
+	// Generate access token
+	accessToken, err := h.jwtService.GenerateAccessToken(userID)
+	if err != nil {
+		log.Printf("failed to generate JWT: %v", err)
+		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+		return
+	}
 
-    newRefreshToken, err := h.authService.RotateRefreshToken(r.Context(), userID)
-    if err != nil {
-        http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
-        return
-    }
+	// Generate refresh token
+	refreshToken, err := h.jwtService.GenerateRefreshToken(userID)
+	if err != nil {
+		log.Printf("failed to generate refresh token: %v", err)
+		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{
-        "access_token":  newAccessToken,
-        "refresh_token": newRefreshToken,
-    })
+	// Save refresh token to database
+	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
+	if err := h.authService.SaveRefreshToken(r.Context(), userID, refreshToken, refreshExpiry); err != nil {
+		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
+		return
+	}
+
+	// Return both tokens
+	response := dto.RefreshTokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// Optional: Get current user profile
+func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	userID, ok := contextkeys.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.userService.GetByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	response := dto.LoggedInUserResponse{
+		ID:        user.ID,
+		Name:      user.Name,
+		Mobile:    user.Mobile,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

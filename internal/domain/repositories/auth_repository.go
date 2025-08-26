@@ -20,10 +20,10 @@ type AuthRepository interface {
 	InvalidateOTP(ctx context.Context, userID string, otp string) error
 
 	// SaveRefreshToken inserts or replaces the refresh token for a user
-	SaveRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt int64) error
+	SaveRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error
 
 	// GetRefreshToken retrieves the refresh token and expiry for a given user
-	GetRefreshToken(ctx context.Context, userID uuid.UUID) (token string, expiresAt int64, err error)
+	GetRefreshToken(ctx context.Context, userID uuid.UUID) (token string, expiresAt time.Time, err error)
 
 	// DeleteRefreshToken removes a refresh token for a user (e.g., logout)
 	DeleteRefreshToken(ctx context.Context, userID uuid.UUID) error

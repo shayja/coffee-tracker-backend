@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/infrastructure/database"
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
@@ -56,7 +57,8 @@ func main() {
 	// Initialize auth service
 	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db), cfg)
 	userService := services.NewUserService(userRepo)
-	authHandler := handlers.NewAuthHandler(cfg.JWTSecret, authService, userService)
+	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7*24*time.Hour)
+	authHandler := handlers.NewAuthHandler(jwtService, authService, userService)
 
 
 	// Setup router
