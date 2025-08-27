@@ -78,7 +78,7 @@ func main() {
 	// ----------------- Public routes (NO auth) -----------------
 	api.HandleFunc("/auth/request-otp", authHandler.RequestOTP).Methods("POST")
 	api.HandleFunc("/auth/verify-otp", authHandler.VerifyOTP).Methods("POST")
-
+	api.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
 	// ----------------- Protected routes -----------------
 	protected := api.NewRoute().Subrouter()
 
@@ -90,7 +90,6 @@ func main() {
 
 	// Auth routes (protected)
 	protected.HandleFunc("/auth/token", authHandler.CreateAuthToken).Methods("GET")
-	protected.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods("POST")
 
 	// Coffee entries routes (protected)
 	protected.HandleFunc("/entries", coffeeHandler.GetEntries).Methods("GET")
