@@ -1,3 +1,5 @@
+// file: cmd/server/main.go
+// Main entry point for the Coffee Tracker backend API server.
 package main
 
 import (
@@ -57,7 +59,7 @@ func main() {
 	// Initialize auth service
 	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db), cfg)
 	userService := services.NewUserService(userRepo)
-	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7*24*time.Hour)
+	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7*(7*24*time.Hour)) // 15 min access, 7 days refresh
 	authHandler := handlers.NewAuthHandler(jwtService, authService, userService)
 
 
@@ -116,9 +118,6 @@ func main() {
 
 	log.Printf("📊 Health check: %s", healthURL)
 	log.Printf("☕ API endpoints: %s", apiURL)
-
-
-
 
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
 		log.Fatal("Server failed to start:", err)

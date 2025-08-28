@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/handlers/health_handler.go
 package handlers
 
 import (

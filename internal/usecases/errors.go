@@ -1,3 +1,4 @@
+// file: internal/usecases/errors.go
 package usecases
 
 import "errors"

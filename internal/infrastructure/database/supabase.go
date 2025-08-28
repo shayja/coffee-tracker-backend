@@ -1,3 +1,5 @@
+// file: internal/infrastructure/database/supabase.go
+// Package database provides utilities for connecting to and interacting with the Supabase database.
 package database
 
 import (

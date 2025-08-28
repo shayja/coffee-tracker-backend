@@ -1,3 +1,4 @@
+// file: internal/domain/repositories/errors.go
 package repositories
 
 import "errors"

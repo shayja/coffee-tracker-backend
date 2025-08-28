@@ -1,11 +1,13 @@
+// file: internal/usecases/get_coffee_stats.go
 package usecases
 
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+
+	"github.com/google/uuid"
 )
 
 type GetCoffeeStatsUseCase struct {

@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/handlers/coffee_entry_handler.go
 package handlers
 
 import (

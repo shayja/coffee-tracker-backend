@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/dto/auth_dto.go
 package dto
 
 // Request DTOs

@@ -1,3 +1,4 @@
+// file: internal/usecases/create_coffee_entry.go
 package usecases
 
 import (

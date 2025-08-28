@@ -1,3 +1,4 @@
+// file: internal/domain/repositories/auth_repository.go
 package repositories
 
 import (

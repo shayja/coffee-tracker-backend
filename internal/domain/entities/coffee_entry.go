@@ -1,3 +1,4 @@
+// file: internal/domain/entities/coffee_entry.go
 package entities
 
 import (

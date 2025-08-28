@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/middleware/http_log_middleware.go
 package middleware
 
 import (

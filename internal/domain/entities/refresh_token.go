@@ -1,4 +1,4 @@
-// entities/refresh_token.go
+// file: internal/domain/entities/refresh_token.go
 package entities
 
 import (

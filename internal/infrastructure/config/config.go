@@ -1,3 +1,5 @@
+// file: internal/infrastructure/config/config.go
+// Package config handles application configuration loading and management.
 package config
 
 import (

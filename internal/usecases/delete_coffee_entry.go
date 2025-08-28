@@ -1,3 +1,4 @@
+// file: internal/usecases/delete_coffee_entry.go
 package usecases
 
 import (

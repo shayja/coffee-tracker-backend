@@ -1,3 +1,4 @@
+// file: internal/domain/repositories/coffee_entry_repository.go
 package repositories
 
 import (
