@@ -2,25 +2,31 @@
 package usecases
 
 import (
+	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 )
 
-type UpdateUserSettingRequest struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 type UpdateUserSettingUseCase struct {
-	settingsRepo repositories.UserSettingsRepository
+    repo repositories.UserSettingsRepository
 }
 
-func NewUpdateUserSettingUseCase(settingsRepo repositories.UserSettingsRepository) *UpdateUserSettingUseCase {
-	return &UpdateUserSettingUseCase{settingsRepo: settingsRepo}
+func NewUpdateUserSettingUseCase(repo repositories.UserSettingsRepository) *UpdateUserSettingUseCase {
+    return &UpdateUserSettingUseCase{repo: repo}
 }
 
-func (uc *UpdateUserSettingUseCase) Execute(ctx context.Context, userID uuid.UUID, req UpdateUserSettingRequest) error {
-	return uc.settingsRepo.Set(ctx, userID, req.Key, req.Value)
+// Execute updates a single user setting
+func (uc *UpdateUserSettingUseCase) Execute(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error {
+    if !setting.IsValid() {
+        return fmt.Errorf("invalid setting key: %s", setting)
+    }
+
+    updates := map[entities.Setting]interface{}{
+        setting: value,
+    }
+
+    return uc.repo.Patch(ctx, userID, updates)
 }

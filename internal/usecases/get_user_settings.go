@@ -2,6 +2,7 @@
 package usecases
 
 import (
+	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
 	"context"
 
@@ -16,6 +17,6 @@ func NewGetUserSettingsUseCase(settingsRepo repositories.UserSettingsRepository)
 	return &GetUserSettingsUseCase{settingsRepo: settingsRepo}
 }
 
-func (uc *GetUserSettingsUseCase) Execute(ctx context.Context, userID uuid.UUID) (map[string]string, error) {
-	return uc.settingsRepo.GetAll(ctx, userID)
+func (uc *GetUserSettingsUseCase) Execute(ctx context.Context, userID uuid.UUID) (*entities.UserSettings, error) {
+	return uc.settingsRepo.Get(ctx, userID)
 }

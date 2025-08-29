@@ -140,7 +140,7 @@ go test -cover ./...
 3. Implement use case in `internal/usecases/`
 4. Create repository implementation in `internal/infrastructure/repositories/`
 5. Add HTTP handler in `internal/infrastructure/http/handlers/`
-6. Register routes in `cmd/server/main.go`
+6. Register routes in `cmd/server/routes.go`
 
 ### Database Migrations
 

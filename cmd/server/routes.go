@@ -41,5 +41,5 @@ func (s *Server) setupRoutes() {
 
 	// User settings routes
 	protected.HandleFunc("/settings", s.userSettingsHandler.GetAll).Methods(http.MethodGet)
-	protected.HandleFunc("/settings/{key}", s.userSettingsHandler.Update).Methods(http.MethodPut)
+	protected.HandleFunc("/settings/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
 }

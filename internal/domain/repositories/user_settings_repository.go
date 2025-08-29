@@ -2,14 +2,14 @@
 package repositories
 
 import (
+	"coffee-tracker-backend/internal/domain/entities"
 	"context"
 
 	"github.com/google/uuid"
 )
 
 type UserSettingsRepository interface {
-    Set(ctx context.Context, userID uuid.UUID, key, value string) error
-    Get(ctx context.Context, userID uuid.UUID, key string) (string, error)
-    GetAll(ctx context.Context, userID uuid.UUID) (map[string]string, error)
-    Delete(ctx context.Context, userID uuid.UUID, key string) error
+    Get(ctx context.Context, userID uuid.UUID) (*entities.UserSettings, error)
+    Patch(ctx context.Context, userID uuid.UUID, updates map[entities.Setting]interface{}) error
+    Reset(ctx context.Context, userID uuid.UUID, setting entities.Setting) error
 }

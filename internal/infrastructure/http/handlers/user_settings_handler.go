@@ -3,9 +3,12 @@ package handlers
 
 import (
 	"coffee-tracker-backend/internal/contextkeys"
+	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type UserSettingsHandler struct {
@@ -40,7 +43,7 @@ func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// PUT /users/settings/:key
+// PATCH /settings/:key
 func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := contextkeys.UserIDFromContext(r.Context())
 	if !ok {
@@ -48,23 +51,34 @@ func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := r.PathValue("key") // if you’re using Go 1.22+ net/http patterns
+	key := r.PathValue("key")
 	if key == "" {
 		http.Error(w, "Missing setting key", http.StatusBadRequest)
 		return
 	}
 
+	setting := entities.Setting(key)
+	if !setting.IsValid() {
+		http.Error(w, "Invalid setting key", http.StatusBadRequest)
+		return
+	}
+
 	var body struct {
-		Value string `json:"value"`
+		Value interface{} `json:"value"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	req := usecases.UpdateUserSettingRequest{Key: key, Value: body.Value}
+	// Convert userID to uuid.UUID
+	uid, err := uuid.Parse(userID.String())
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+		return
+	}
 
-	if err := h.updateUC.Execute(r.Context(), userID, req); err != nil {
+	if err := h.updateUC.Execute(r.Context(), uid, setting, body.Value); err != nil {
 		http.Error(w, "Failed to update setting", http.StatusInternalServerError)
 		return
 	}
