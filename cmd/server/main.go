@@ -14,7 +14,6 @@ import (
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
 	"coffee-tracker-backend/internal/infrastructure/http/middleware"
 	"coffee-tracker-backend/internal/infrastructure/repositories"
-	"coffee-tracker-backend/internal/services"
 	"coffee-tracker-backend/internal/usecases"
 
 	"github.com/gorilla/mux"
@@ -40,21 +39,31 @@ func main() {
 	coffeeRepo := repositories.NewCoffeeEntryRepositoryImpl(db)
 	userRepo := repositories.NewUserRepositoryImpl(db)
 	settingsRepo := repositories.NewUserSettingsRepositoryImpl(db)
+	authRepo := repositories.NewAuthRepositoryImpl(db)
 
 	// Initialize use cases
-	createCoffeeUseCase := usecases.NewCreateCoffeeEntryUseCase(coffeeRepo)
+	createCoffeeUC := usecases.NewCreateCoffeeEntryUseCase(coffeeRepo)
 	editCoffeeUseCase := usecases.NewEditCoffeeEntryUseCase(coffeeRepo)
-	deleteCoffeeUseCase := usecases.NewDeleteCoffeeEntryUseCase(coffeeRepo)
-	getCoffeeEntriesUseCase := usecases.NewGetCoffeeEntriesUseCase(coffeeRepo)
-	getCoffeeStatsUseCase := usecases.NewGetCoffeeStatsUseCase(coffeeRepo)
+	deleteCoffeeUC := usecases.NewDeleteCoffeeEntryUseCase(coffeeRepo)
+	listCoffeeUC := usecases.NewListCoffeeEntriesUseCase(coffeeRepo)
+	getStatsUseCase := usecases.NewGetCoffeeStatsUseCase(coffeeRepo)
+
+
+	getUserByIDUC := usecases.NewGetUserByIDUseCase(userRepo)
+	getUserByMobileUC := usecases.NewGetUserByMobileUseCase(userRepo)
+	genereteOtpUC := usecases.NewGenerateOtpUseCase(authRepo)
+	validateOtpUC := usecases.NewValidateOtpUseCase(authRepo, cfg)
+	saveRefreshTokenUC := usecases.NewSaveRefreshTokenUseCase(authRepo)
+	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)
+	deleteRefreshTokenUC := usecases.NewDeleteRefreshTokenUseCase(authRepo)
 
 	// Initialize handlers
 	coffeeHandler := handlers.NewCoffeeEntryHandler(
-		createCoffeeUseCase,
+		createCoffeeUC,
 		editCoffeeUseCase,
-		deleteCoffeeUseCase,
-		getCoffeeEntriesUseCase,
-		getCoffeeStatsUseCase,
+		deleteCoffeeUC,
+		listCoffeeUC,
+		getStatsUseCase,
 	)
 
 	// User settings
@@ -63,11 +72,19 @@ func main() {
 	userSettingsHandler := handlers.NewUserSettingsHandler(getAllUC, updateUC)
 
 	healthHandler := handlers.NewHealthHandler()
-	// Initialize auth service
-	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db), cfg)
-	userService := services.NewUserService(userRepo)
+
+	// authHandler
 	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7 * 24 * time.Hour) // 15 min access, 7 days refresh
-	authHandler := handlers.NewAuthHandler(jwtService, authService, userService)
+	authHandler := handlers.NewAuthHandler(
+		jwtService, 
+		getUserByIDUC, 
+		getUserByMobileUC,
+		genereteOtpUC,
+		validateOtpUC,
+		saveRefreshTokenUC,
+		getRefreshTokenUC,
+		deleteRefreshTokenUC,
+	)
 
 
 	// Setup router

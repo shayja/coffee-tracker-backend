@@ -17,25 +17,25 @@ import (
 )
 
 type CoffeeEntryHandler struct {
-	createUseCase    *usecases.CreateCoffeeEntryUseCase
-	editUseCase      *usecases.EditCoffeeEntryUseCase
-	deleteUseCase    *usecases.DeleteCoffeeEntryUseCase
-	getEntriesUseCase *usecases.GetCoffeeEntriesUseCase
+	createCoffeeUC    *usecases.CreateCoffeeEntryUseCase
+	editCoffeeUC      *usecases.EditCoffeeEntryUseCase
+	deleteCoffeeUC     *usecases.DeleteCoffeeEntryUseCase
+	listCoffeeUC *usecases.ListCoffeeEntriesUseCase
 	getStatsUseCase   *usecases.GetCoffeeStatsUseCase
 }
 
 func NewCoffeeEntryHandler(
-	createUseCase *usecases.CreateCoffeeEntryUseCase,
-	editUseCase *usecases.EditCoffeeEntryUseCase,
-	deleteUseCase *usecases.DeleteCoffeeEntryUseCase,
-	getEntriesUseCase *usecases.GetCoffeeEntriesUseCase,
+	createCoffeeUC *usecases.CreateCoffeeEntryUseCase,
+	editCoffeeUC *usecases.EditCoffeeEntryUseCase,
+	deleteCoffeeUC *usecases.DeleteCoffeeEntryUseCase,
+	listCoffeeUC *usecases.ListCoffeeEntriesUseCase,
 	getStatsUseCase *usecases.GetCoffeeStatsUseCase,
 ) *CoffeeEntryHandler {
 	return &CoffeeEntryHandler{
-		createUseCase:     createUseCase,
-		editUseCase:       editUseCase,
-		deleteUseCase:     deleteUseCase,
-		getEntriesUseCase: getEntriesUseCase,
+		createCoffeeUC:     createCoffeeUC,
+		editCoffeeUC:       editCoffeeUC,
+		deleteCoffeeUC:     deleteCoffeeUC,
+		listCoffeeUC: listCoffeeUC,
 		getStatsUseCase:   getStatsUseCase,
 	}
 }
@@ -54,7 +54,7 @@ func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	entry, err := h.createUseCase.Execute(r.Context(), req, userID)
+	entry, err := h.createCoffeeUC.Execute(r.Context(), req, userID)
 	if err != nil {
 		switch err {
 		case usecases.ErrInvalidInput:
@@ -100,7 +100,7 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	req.ID = entryID
 
-	entry, err := h.editUseCase.Execute(r.Context(), req, userID)
+	entry, err := h.editCoffeeUC.Execute(r.Context(), req, userID)
 	if err != nil {
 		switch err {
 		case usecases.ErrInvalidInput:
@@ -139,7 +139,7 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	entries, err := h.getEntriesUseCase.Execute(r.Context(), userID, &dateStr, tzOffset, limit, offset)
+	entries, err := h.listCoffeeUC.Execute(r.Context(), userID, &dateStr, tzOffset, limit, offset)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -164,7 +164,7 @@ func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Call use case to delete
-	err = h.deleteUseCase.Execute(r.Context(), userID, entryID)
+	err = h.deleteCoffeeUC.Execute(r.Context(), userID, entryID)
 	if err != nil {
 		switch err {
 		case usecases.ErrNotFound:

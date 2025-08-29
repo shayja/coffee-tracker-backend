@@ -1,4 +1,4 @@
-// file: internal/usecases/create_coffee_entry.go
+// file: internal/usecases/get_coffee_entries.go
 package usecases
 
 import (
@@ -11,17 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type GetCoffeeEntriesUseCase struct {
+type ListCoffeeEntriesUseCase struct {
 	coffeeRepo repositories.CoffeeEntryRepository
 }
 
-func NewGetCoffeeEntriesUseCase(coffeeRepo repositories.CoffeeEntryRepository) *GetCoffeeEntriesUseCase {
-	return &GetCoffeeEntriesUseCase{
+func NewListCoffeeEntriesUseCase(coffeeRepo repositories.CoffeeEntryRepository) *ListCoffeeEntriesUseCase {
+	return &ListCoffeeEntriesUseCase{
 		coffeeRepo: coffeeRepo,
 	}
 }
 
-func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, dateStr *string, tzOffsetMinutes *int, limit, offset int) ([]*entities.CoffeeEntry, error) {
+func (uc *ListCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, dateStr *string, tzOffsetMinutes *int, limit, offset int) ([]*entities.CoffeeEntry, error) {
 	if limit <= 0 {
 		limit = 50 // default limit
 	}

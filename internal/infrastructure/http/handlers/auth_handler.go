@@ -5,7 +5,7 @@ import (
 	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
-	"coffee-tracker-backend/internal/services"
+	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -14,20 +14,38 @@ import (
 
 type AuthHandler struct {
 	jwtService  *auth.JWTService
-	authService *services.AuthService
-	userService *services.UserService
+	getUserByIDUC *usecases.GetUserByIDUseCase
+	getUserByMobileUC *usecases.GetUserByMobileUseCase
+	genereteOtpUC *usecases.GenerateOtpUseCase
+	validateOtpUC *usecases.ValidateOtpUseCase
+	saveRefreshTokenUC *usecases.SaveRefreshTokenUseCase
+	getRefreshTokenUC *usecases.GetRefreshTokenUseCase
+	deleteRefreshTokenUC *usecases.DeleteRefreshTokenUseCase
 }
 
-func NewAuthHandler(jwtService *auth.JWTService, authService *services.AuthService, userService *services.UserService) *AuthHandler {
+func NewAuthHandler(jwtService *auth.JWTService, 
+	getUserByIDUC *usecases.GetUserByIDUseCase, 
+	getUserByMobileUC *usecases.GetUserByMobileUseCase, 
+	genereteOtpUC *usecases.GenerateOtpUseCase,
+	validateOtpUC *usecases.ValidateOtpUseCase,
+	saveRefreshTokenUC *usecases.SaveRefreshTokenUseCase,
+	getRefreshTokenUC *usecases.GetRefreshTokenUseCase,
+	deleteRefreshTokenUC *usecases.DeleteRefreshTokenUseCase) *AuthHandler {
 	if jwtService == nil {
 		log.Fatal("JWT service is required")
 	}
 	return &AuthHandler{
 		jwtService:  jwtService,
-		authService: authService,
-		userService: userService,
+		getUserByIDUC: getUserByIDUC,
+		getUserByMobileUC: getUserByMobileUC,
+		genereteOtpUC: genereteOtpUC,
+		validateOtpUC: validateOtpUC,
+		saveRefreshTokenUC: saveRefreshTokenUC,
+		getRefreshTokenUC: getRefreshTokenUC,
+		deleteRefreshTokenUC: deleteRefreshTokenUC,
 	}
 }
+
 
 func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 	var req dto.SendOtpRequest
@@ -37,13 +55,13 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Lookup user by mobile (ensure they exist)
-	user, err := h.userService.GetByMobile(r.Context(), req.Mobile)
+	user, err := h.getUserByMobileUC.Execute(r.Context(), req.Mobile)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	otp, err := h.authService.GenerateOTP(r.Context(), user.ID)
+	otp, err := h.genereteOtpUC.Execute(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Failed to generate OTP", http.StatusInternalServerError)
 		return
@@ -61,14 +79,14 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userService.GetByMobile(r.Context(), req.Mobile)
+	user, err := h.getUserByMobileUC.Execute(r.Context(), req.Mobile)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
 		return
 	}
 
 	// Validate OTP
-	valid, err := h.authService.ValidateOTP(r.Context(), user.ID, req.OTP)
+	valid, err := h.validateOtpUC.Execute(r.Context(), user.ID, req.OTP)
 	if err != nil || !valid {
 		http.Error(w, "Invalid or expired OTP", http.StatusUnauthorized)
 		return
@@ -89,7 +107,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 
 	// Save refresh token to database
 	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.authService.SaveRefreshToken(r.Context(), user.ID, refreshToken, refreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, refreshToken, refreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -137,7 +155,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify refresh token exists in database and matches
-	storedToken, expiresAt, err := h.authService.GetRefreshToken(r.Context(), userID)
+	storedToken, expiresAt, err := h.getRefreshTokenUC.Execute(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "Refresh token not found", http.StatusUnauthorized)
 		return
@@ -168,7 +186,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	// Save new refresh token (rotate)
 	newRefreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.authService.SaveRefreshToken(r.Context(), userID, newRefreshToken, newRefreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, newRefreshToken, newRefreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -191,7 +209,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete refresh token from database
-	if err := h.authService.DeleteRefreshToken(r.Context(), userID); err != nil {
+	if err := h.deleteRefreshTokenUC.Execute(r.Context(), userID); err != nil {
 		http.Error(w, "Failed to logout", http.StatusInternalServerError)
 		return
 	}
@@ -226,7 +244,7 @@ func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// Save refresh token to database
 	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.authService.SaveRefreshToken(r.Context(), userID, refreshToken, refreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, refreshToken, refreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -249,7 +267,7 @@ func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userService.GetByID(r.Context(), userID)
+	user, err := h.getUserByIDUC.Execute(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
