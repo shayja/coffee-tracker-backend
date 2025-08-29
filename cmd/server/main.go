@@ -39,6 +39,7 @@ func main() {
 	// Initialize repositories
 	coffeeRepo := repositories.NewCoffeeEntryRepositoryImpl(db)
 	userRepo := repositories.NewUserRepositoryImpl(db)
+	settingsRepo := repositories.NewUserSettingsRepositoryImpl(db)
 
 	// Initialize use cases
 	createCoffeeUseCase := usecases.NewCreateCoffeeEntryUseCase(coffeeRepo)
@@ -55,11 +56,17 @@ func main() {
 		getCoffeeEntriesUseCase,
 		getCoffeeStatsUseCase,
 	)
+
+	// User settings
+	getAllUC := usecases.NewGetUserSettingsUseCase(settingsRepo)
+	updateUC := usecases.NewUpdateUserSettingUseCase(settingsRepo)
+	userSettingsHandler := handlers.NewUserSettingsHandler(getAllUC, updateUC)
+
 	healthHandler := handlers.NewHealthHandler()
 	// Initialize auth service
 	authService := services.NewAuthService(repositories.NewAuthRepositoryImpl(db), cfg)
 	userService := services.NewUserService(userRepo)
-	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7*(7*24*time.Hour)) // 15 min access, 7 days refresh
+	jwtService := auth.NewJWTService(cfg.JWTSecret, 15*time.Minute, 7 * 24 * time.Hour) // 15 min access, 7 days refresh
 	authHandler := handlers.NewAuthHandler(jwtService, authService, userService)
 
 
@@ -99,6 +106,10 @@ func main() {
 	protected.HandleFunc("/entries/{id}", coffeeHandler.EditEntry).Methods("PUT")
 	protected.HandleFunc("/entries/{id}", coffeeHandler.DeleteEntry).Methods("DELETE")
 	protected.HandleFunc("/stats", coffeeHandler.GetStats).Methods("GET")
+
+
+	protected.HandleFunc("/settings", userSettingsHandler.GetAll).Methods("GET")
+	protected.HandleFunc("/settings/{key}", userSettingsHandler.Update).Methods("PUT")
 
 	log.Printf("🚀 Coffee Tracker API starting on port %s", cfg.Port)
 
