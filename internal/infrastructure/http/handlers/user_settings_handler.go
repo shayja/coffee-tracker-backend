@@ -7,8 +7,6 @@ import (
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 type UserSettingsHandler struct {
@@ -51,34 +49,23 @@ func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := r.PathValue("key")
-	if key == "" {
-		http.Error(w, "Missing setting key", http.StatusBadRequest)
-		return
-	}
-
-	setting := entities.Setting(key)
-	if !setting.IsValid() {
-		http.Error(w, "Invalid setting key", http.StatusBadRequest)
-		return
-	}
-
 	var body struct {
-		Value interface{} `json:"value"`
+		Key   int         `json:"key"`   // enum number
+		Value interface{} `json:"value"` // could be bool, string, int
 	}
+	
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Convert userID to uuid.UUID
-	uid, err := uuid.Parse(userID.String())
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusUnauthorized)
+	setting := entities.Setting(body.Key)
+	if !setting.IsValid() {
+		http.Error(w, "Invalid setting key", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.updateUC.Execute(r.Context(), uid, setting, body.Value); err != nil {
+	if err := h.updateUC.Execute(r.Context(), userID, setting, body.Value); err != nil {
 		http.Error(w, "Failed to update setting", http.StatusInternalServerError)
 		return
 	}

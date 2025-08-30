@@ -20,13 +20,8 @@ func NewUpdateUserSettingUseCase(repo repositories.UserSettingsRepository) *Upda
 
 // Execute updates a single user setting
 func (uc *UpdateUserSettingUseCase) Execute(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error {
-    if !setting.IsValid() {
-        return fmt.Errorf("invalid setting key: %s", setting)
-    }
-
-    updates := map[entities.Setting]interface{}{
-        setting: value,
-    }
-
-    return uc.repo.Patch(ctx, userID, updates)
+	if !setting.IsValid() {
+		return fmt.Errorf("invalid setting key: %d", setting)
+	}
+	return uc.repo.Patch(ctx, userID, setting, value)
 }

@@ -14,23 +14,34 @@ type UserSettings struct {
 }
 
 // Enum-like type for allowed settings
-type Setting string
+type Setting int
 
 const (
-    SettingBiometricEnabled     Setting = "biometric_enabled"
-    SettingDarkMode             Setting = "dark_mode"
-    SettingNotificationsEnabled Setting = "notifications_enabled"
+	SettingUnknown Setting = iota
+	SettingBiometricEnabled
+	SettingDarkMode
+	SettingNotificationsEnabled
 )
 
-// AllowedSettings set for validation
-var AllowedSettings = map[Setting]struct{}{
-    SettingBiometricEnabled:     {},
-    SettingDarkMode:             {},
-    SettingNotificationsEnabled: {},
+func (s Setting) IsValid() bool {
+	switch s {
+	case SettingBiometricEnabled,
+		SettingDarkMode,
+		SettingNotificationsEnabled:
+		return true
+	}
+	return false
 }
 
-// Helper: check if a setting is valid
-func (s Setting) IsValid() bool {
-    _, ok := AllowedSettings[s]
-    return ok
+func (s Setting) ColumnName() string {
+	switch s {
+	case SettingBiometricEnabled:
+		return "biometric_enabled"
+	case SettingDarkMode:
+		return "dark_mode"
+	case SettingNotificationsEnabled:
+		return "notifications_enabled"
+	default:
+		return ""
+	}
 }

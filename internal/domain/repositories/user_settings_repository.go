@@ -10,6 +10,6 @@ import (
 
 type UserSettingsRepository interface {
     Get(ctx context.Context, userID uuid.UUID) (*entities.UserSettings, error)
-    Patch(ctx context.Context, userID uuid.UUID, updates map[entities.Setting]interface{}) error
+    Patch(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error
     Reset(ctx context.Context, userID uuid.UUID, setting entities.Setting) error
 }

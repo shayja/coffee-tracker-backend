@@ -6,7 +6,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -37,42 +36,26 @@ func (r *UserSettingsRepositoryImpl) Get(ctx context.Context, userID uuid.UUID) 
 }
 
 // Patch updates one or more user settings dynamically
-func (r *UserSettingsRepositoryImpl) Patch(ctx context.Context, userID uuid.UUID, updates map[entities.Setting]interface{}) error {
-    if len(updates) == 0 {
-        return nil
-    }
+func (r *UserSettingsRepositoryImpl) Patch(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error {
+	column := setting.ColumnName()
+	if column == "" {
+		return fmt.Errorf("unknown setting: %d", setting)
+	}
 
-    setClauses := []string{}
-    args := []interface{}{}
-    i := 1
-
-    for setting, value := range updates {
-        if !setting.IsValid() {
-            return fmt.Errorf("invalid setting: %s", setting)
-        }
-        setClauses = append(setClauses, fmt.Sprintf("%s = $%d", setting, i))
-        args = append(args, value)
-        i++
-    }
-
-    query := fmt.Sprintf(
-        `UPDATE user_settings SET %s, updated_at = now() WHERE user_id = $%d`,
-        strings.Join(setClauses, ", "),
-        i,
-    )
-    args = append(args, userID)
-
-    _, err := r.db.ExecContext(ctx, query, args...)
-    return err
+	query := fmt.Sprintf(`UPDATE user_settings SET %s = $1, updated_at = NOW() WHERE user_id = $2`, column)
+	_, err := r.db.ExecContext(ctx, query, value, userID)
+	return err
 }
+
 
 // Reset sets a specific setting to its default (e.g. false)
 func (r *UserSettingsRepositoryImpl) Reset(ctx context.Context, userID uuid.UUID, setting entities.Setting) error {
-    if !setting.IsValid() {
-        return fmt.Errorf("invalid setting: %s", setting)
-    }
+    column := setting.ColumnName()
+	if column == "" {
+		return fmt.Errorf("unknown setting: %d", setting)
+	}
 
-    query := fmt.Sprintf(`UPDATE user_settings SET %s = false, updated_at = now() WHERE user_id = $1`, setting)
+    query := fmt.Sprintf(`UPDATE user_settings SET %s = false, updated_at = now() WHERE user_id = $1`, column)
     _, err := r.db.ExecContext(ctx, query, userID)
     return err
 }
