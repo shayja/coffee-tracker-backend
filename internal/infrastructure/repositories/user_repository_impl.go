@@ -4,9 +4,12 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"strconv"
+	"time"
 
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/infrastructure/http/dto"
 
 	"github.com/google/uuid"
 )
@@ -39,77 +42,73 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user *entities.User) er
 
 func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error) {
 	query := `
-		SELECT id, email, name, status_id, created_at, updated_at
+		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
-	
 	var user entities.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Email,
+		&user.Mobile,
 		&user.Name,
+		&user.AvatarURL,
 		&user.StatusID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-	
 	if err != nil {
 		return nil, err
 	}
-	
 	return &user, nil
 }
 
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	query := `
-		SELECT id, email, mobile, name, status_id, created_at, updated_at
+		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
-	
 	var user entities.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Email,
 		&user.Mobile,
 		&user.Name,
+		&user.AvatarURL,
 		&user.StatusID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-	
 	if err != nil {
 		return nil, err
 	}
-	
 	return &user, nil
 }
 
 func (r *UserRepositoryImpl) GetByMobile(ctx context.Context, mobile string) (*entities.User, error) {
 	query := `
-		SELECT id, email, mobile, name, status_id, created_at, updated_at
+		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
 		FROM users
 		WHERE mobile = $1
 	`
-	
 	var user entities.User
 	err := r.db.QueryRowContext(ctx, query, mobile).Scan(
 		&user.ID,
 		&user.Email,
 		&user.Mobile,
 		&user.Name,
+		&user.AvatarURL,
 		&user.StatusID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-	
 	if err != nil {
 		return nil, err
 	}
-	
 	return &user, nil
 }
+
 
 func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
 	query := `
@@ -135,20 +134,59 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-func (r *AuthRepositoryImpl) GetUserIDByRefreshToken(ctx context.Context, refreshToken string) (uuid.UUID, error) {
-    var userID uuid.UUID
-    query := `
-        SELECT user_id
-        FROM user_refresh_tokens
-        WHERE token = $1 AND expires_at > NOW()
-        LIMIT 1
-    `
-    err := r.db.QueryRowContext(ctx, query, refreshToken).Scan(&userID)
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return uuid.Nil, repositories.ErrNotFound
-        }
-        return uuid.Nil, err
-    }
-    return userID, nil
+// UpdateProfile updates the user's profile fields (name, avatar_url).
+func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID, req *dto.UpdateUserProfileRequest) error {
+	query := `UPDATE users SET `
+	params := []interface{}{}
+	i := 1
+
+	if req.Name != nil {
+		query += `name = $` + strconv.Itoa(i) + `, `
+		params = append(params, *req.Name)
+		i++
+	}
+	if req.Email != nil {
+		query += `email = $` + strconv.Itoa(i) + `, `
+		params = append(params, *req.Email)
+		i++
+	}
+	// if req.Address != nil {
+	// 	query += `address = $` + strconv.Itoa(i) + `, `
+	// 	params = append(params, *req.Address)
+	// 	i++
+	// }
+	// if req.City != nil {
+	// 	query += `city = $` + strconv.Itoa(i) + `, `
+	// 	params = append(params, *req.City)
+	// 	i++
+	// }
+	// if req.ZipCode != nil {
+	// 	query += `zip_code = $` + strconv.Itoa(i) + `, `
+	// 	params = append(params, *req.ZipCode)
+	// 	i++
+	// }
+
+	// Always update updated_at
+	query += `updated_at = NOW() WHERE id = $` + strconv.Itoa(i)
+	params = append(params, userID)
+
+	_, err := r.db.ExecContext(ctx, query, params...)
+	return err
+}
+
+func (r *UserRepositoryImpl) UpdateAProfileImage(ctx context.Context, user *entities.User) error {
+    query := `UPDATE users SET avatar_url = $1, updated_at = $2 WHERE id = $3`
+    _, err := r.db.ExecContext(ctx, query, user.AvatarURL, user.UpdatedAt, user.ID)
+    return err
+}
+
+
+func (r *UserRepositoryImpl) DeleteProfileImage(ctx context.Context, userID uuid.UUID, updatedAt time.Time) error {
+	query := `
+		UPDATE users
+		SET avatar_url = NULL, updated_at = $2
+		WHERE id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query, userID, updatedAt)
+	return err
 }

@@ -23,6 +23,7 @@ type Server struct {
 	router            *mux.Router
 	httpServer        *http.Server
 	logger            *log.Logger
+	userHandler 	  *handlers.UserHandler
 	coffeeHandler     *handlers.CoffeeEntryHandler
 	userSettingsHandler *handlers.UserSettingsHandler
 	healthHandler     *handlers.HealthHandler

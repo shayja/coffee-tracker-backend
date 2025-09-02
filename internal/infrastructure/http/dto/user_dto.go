@@ -14,3 +14,13 @@ type LoggedInUserResponse struct {
 // 	Name  string  `json:"name" binding:"required,min=2,max=100"`
 // 	Email *string `json:"email,omitempty" binding:"omitempty,email"`
 // }
+
+
+type UpdateUserProfileRequest struct {
+	Name    *string `json:"name,omitempty"`
+	Email   *string `json:"email,omitempty"`
+	//Address *string `json:"address,omitempty"`
+	//City    *string `json:"city,omitempty"`
+	//ZipCode *string `json:"zip_code,omitempty"`
+	// add more fields as needed
+}

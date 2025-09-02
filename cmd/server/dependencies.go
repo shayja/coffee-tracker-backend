@@ -37,6 +37,12 @@ func (s *Server) initializeDependencies() error {
 	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)
 	deleteRefreshTokenUC := usecases.NewDeleteRefreshTokenUseCase(authRepo)
 
+
+	getProfileUC := usecases.NewGetUserProfileUseCase(userRepo)
+	updateProfileUC := usecases.NewUpdateUserProfileUseCase(userRepo)
+	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo)
+	deleteImageUC := usecases.NewDeleteUserProfileImageUseCase(userRepo)
+
 	// Initialize handlers
 	s.coffeeHandler = handlers.NewCoffeeEntryHandler(
 		createCoffeeUC,
@@ -62,6 +68,17 @@ func (s *Server) initializeDependencies() error {
 		deleteRefreshTokenUC,
 	)
 	s.userRepo = userRepo
+
+	s.userHandler = handlers.NewUserHandler(
+		getProfileUC,
+		updateProfileUC,
+		uploadImageUC, 
+		deleteImageUC,
+	)
+
+
+
+
 
 	return nil
 }

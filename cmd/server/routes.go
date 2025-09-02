@@ -32,6 +32,15 @@ func (s *Server) setupRoutes() {
 	// Auth routes
 	protected.HandleFunc("/auth/token", s.authHandler.CreateAuthToken).Methods(http.MethodGet)
 
+	// User profile routes
+	protected.HandleFunc("/user/profile", s.userHandler.GetProfile).Methods(http.MethodGet)
+	protected.HandleFunc("/user/profile", s.userHandler.UpdateProfile).Methods(http.MethodPatch)
+
+	// User avatar routes
+	protected.HandleFunc("/user/avatar", s.userHandler.UploadProfileImage).Methods(http.MethodPost)
+	protected.HandleFunc("/user/avatar", s.userHandler.DeleteProfileImage).Methods(http.MethodDelete)
+
+
 	// Coffee entry routes
 	protected.HandleFunc("/entries", s.coffeeHandler.GetEntries).Methods(http.MethodGet)
 	protected.HandleFunc("/entries", s.coffeeHandler.CreateEntry).Methods(http.MethodPost)

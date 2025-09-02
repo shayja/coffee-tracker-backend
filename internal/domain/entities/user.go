@@ -17,8 +17,8 @@ type User struct {
 	Email     string     `db:"email" json:"email"`
 	Mobile    string     `db:"mobile" json:"mobile"`
 	Name      string     `db:"name" json:"name"`
+	AvatarURL string     `db:"avatar_url" json:"avatar_url"`
 	StatusID  int        `db:"status_id" json:"status_id"`
-	//Status    string    `db:"status" json:"status"` // joined value
 	CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
 }

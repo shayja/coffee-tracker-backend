@@ -1,0 +1,22 @@
+package usecases
+
+import (
+	"context"
+	"time"
+
+	"coffee-tracker-backend/internal/domain/repositories"
+
+	"github.com/google/uuid"
+)
+
+type DeleteUserProfileImageUseCase struct {
+	userRepo repositories.UserRepository
+}
+
+func NewDeleteUserProfileImageUseCase(userRepo repositories.UserRepository) *DeleteUserProfileImageUseCase {
+	return &DeleteUserProfileImageUseCase{userRepo: userRepo}
+}
+
+func (uc *DeleteUserProfileImageUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
+	return uc.userRepo.DeleteProfileImage(ctx, userID, time.Now().UTC())
+}

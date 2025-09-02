@@ -23,7 +23,7 @@ func (uc *GenerateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID) (st
 	otp := fmt.Sprintf("%06d", randInt(100000, 999999)) // 6-digit code
 	expiresAt := time.Now().Add(5 * time.Minute)
 
-	err := uc.authRepo.SaveOTP(ctx, userID.String(), otp, expiresAt)
+	err := uc.authRepo.SaveOTP(ctx, userID, otp, expiresAt)
 	if err != nil {
 		return "", err
 	}

@@ -24,13 +24,13 @@ func (uc *ValidateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID, otp
 		return true, nil
 	}
 	// Check if OTP is valid and not expired
-	valid, err := uc.authRepo.GetValidOTP(ctx, userID.String(), otp)
+	valid, err := uc.authRepo.GetValidOTP(ctx, userID, otp)
 	if err != nil || !valid {
 		return false, err
 	}
 
 	// Invalidate OTP after use
-	_ = uc.authRepo.InvalidateOTP(ctx, userID.String(), otp)
+	_ = uc.authRepo.InvalidateOTP(ctx, userID, otp)
 
 	return true, nil
 }
