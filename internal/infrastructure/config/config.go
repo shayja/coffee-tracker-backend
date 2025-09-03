@@ -12,6 +12,8 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret   string
 	MagicOtp   	string
+	StorageURL  string
+	StorageApiKey string
 }
 
 func Load() *Config {
@@ -21,6 +23,8 @@ func Load() *Config {
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		MagicOtp:    getEnv("MAGIC_OTP", ""),
+		StorageURL:  getEnv("SUPABASE_STORAGE_URL", ""),
+		StorageApiKey:getEnv("SUPABASE_STORAGE_API_KEY", ""),
 	}
 }
 

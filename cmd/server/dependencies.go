@@ -5,8 +5,11 @@ import (
 	"coffee-tracker-backend/internal/infrastructure/database"
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
 	"coffee-tracker-backend/internal/infrastructure/repositories"
+	"coffee-tracker-backend/internal/infrastructure/storage"
 	"coffee-tracker-backend/internal/usecases"
 	"time"
+
+	storage_go "github.com/supabase-community/storage-go"
 )
 
 // initializeDependencies sets up all dependencies (database, repositories, use cases, handlers)
@@ -16,6 +19,12 @@ func (s *Server) initializeDependencies() error {
 	if err != nil {
 		return err
 	}
+
+	// Initialize Supabase Storage client
+	var storageService storage.StorageService
+
+	client := storage_go.NewClient(s.config.StorageURL, s.config.StorageApiKey, nil)
+	storageService = storage.NewSupabaseStorageService(client, s.config.StorageURL)
 
 	// Initialize repositories
 	coffeeRepo := repositories.NewCoffeeEntryRepositoryImpl(db)
@@ -40,7 +49,7 @@ func (s *Server) initializeDependencies() error {
 
 	getProfileUC := usecases.NewGetUserProfileUseCase(userRepo)
 	updateProfileUC := usecases.NewUpdateUserProfileUseCase(userRepo)
-	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo)
+	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo, storageService)
 	deleteImageUC := usecases.NewDeleteUserProfileImageUseCase(userRepo)
 
 	// Initialize handlers

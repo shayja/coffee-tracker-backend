@@ -17,15 +17,14 @@ type UploadUserProfileImageResult struct {
 }
 
 type UploadUserProfileImageUseCase struct {
-    storage storage.StorageService
     userRepo repositories.UserRepository
+    storage storage.StorageService
 }
 
 
-func NewUploadUserProfileImageUseCase(userRepo repositories.UserRepository) *UploadUserProfileImageUseCase {
-	return &UploadUserProfileImageUseCase{userRepo: userRepo}
+func NewUploadUserProfileImageUseCase(userRepo repositories.UserRepository, storage storage.StorageService) *UploadUserProfileImageUseCase {
+	return &UploadUserProfileImageUseCase{ userRepo: userRepo, storage: storage }
 }
-
 
 func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uuid.UUID, filename string, file io.Reader) (string, error) {
     // Upload to storage (Supabase)

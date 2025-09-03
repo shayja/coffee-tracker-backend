@@ -15,10 +15,10 @@ type SupabaseStorageService struct {
 	baseURL string
 }
 
-func NewSupabaseStorageService(client *storage.Client) *SupabaseStorageService {
+func NewSupabaseStorageService(client *storage.Client, baseURL string) *SupabaseStorageService {
 	return &SupabaseStorageService{
 		client:  client,
-		baseURL: "https://<project-ref>.supabase.co/storage/v1/object/public",
+		baseURL: baseURL,
 	}
 }
 
