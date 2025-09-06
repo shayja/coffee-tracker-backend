@@ -50,7 +50,7 @@ import (
 
 	getProfileUC := usecases.NewGetUserProfileUseCase(userRepo)
 	updateProfileUC := usecases.NewUpdateUserProfileUseCase(userRepo)
-	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo, storageService)
+	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo, storageService, s.config)
 	deleteImageUC := usecases.NewDeleteUserProfileImageUseCase(userRepo)
 
 	// Initialize handlers

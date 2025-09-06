@@ -7,24 +7,26 @@ import (
 )
 
 type Config struct {
-	Env		 	string
-	Port        string
-	DatabaseURL string
-	JWTSecret   string
-	MagicOtp   	string
-	StorageURL  string
-	ServiceRoleKey string
+	Env		 			string
+	Port        		string
+	DatabaseURL 		string
+	JWTSecret   		string
+	MagicOtp   			string
+	StorageURL  		string
+	ServiceRoleKey 		string
+	ProfileImageBucket 	string
 }
 
 func Load() *Config {
 	return &Config{
-		Env:         getEnv("ENV", "dev"),
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		JWTSecret:   getEnv("JWT_SECRET", ""),
-		MagicOtp:    getEnv("MAGIC_OTP", ""),
-		StorageURL:  getEnv("SUPABASE_STORAGE_URL", ""),
-		ServiceRoleKey:getEnv("SUPABASE_SERVICE_KEY_ID", ""),
+		Env:         		getEnv("ENV", "dev"),
+		Port:        		getEnv("PORT", "8080"),
+		DatabaseURL: 		getEnv("DATABASE_URL", ""),
+		JWTSecret:   		getEnv("JWT_SECRET", ""),
+		MagicOtp:    		getEnv("MAGIC_OTP", ""),
+		StorageURL:  		getEnv("SUPABASE_STORAGE_URL", ""),
+		ServiceRoleKey:		getEnv("SUPABASE_SERVICE_KEY_ID", ""),
+		ProfileImageBucket: getEnv("PROFILE_IMAGE_BUCKET", ""),
 	}
 }
 
