@@ -2,12 +2,15 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"path"
 	"time"
 
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
 	"coffee-tracker-backend/internal/infrastructure/storage"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 
 	"github.com/google/uuid"
 )
@@ -27,8 +30,16 @@ func NewUploadUserProfileImageUseCase(userRepo repositories.UserRepository, stor
 }
 
 func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uuid.UUID, filename string, file io.Reader) (string, error) {
-    // Upload to storage (Supabase)
-    url, err := uc.storage.UploadFile(ctx, "avatars", filename, file)
+   
+    const bucketName = "avatars"
+    const avatarFileNameLangth = 10
+
+    extension := path.Ext(filename)
+	userFolderPath := fmt.Sprintf("%s/%s%s", userID, utils.GenerateString(avatarFileNameLangth), extension)
+
+    // Upload to storage
+    url, err := uc.storage.UploadFile(ctx, bucketName, userFolderPath, file)
+
     if err != nil {
         return "", err
     }

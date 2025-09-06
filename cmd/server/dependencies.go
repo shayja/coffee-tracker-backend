@@ -9,8 +9,6 @@ import (
 	"coffee-tracker-backend/internal/usecases"
 	"fmt"
 	"time"
-
-	storage_go "github.com/supabase-community/storage-go"
 )
 
 // initializeDependencies sets up all dependencies (database, repositories, use cases, handlers)
@@ -31,8 +29,8 @@ import (
 	if s.config.StorageURL == "" || s.config.ServiceRoleKey == "" {
 		s.logger.Fatal(fmt.Errorf("invalid storage configuration: URL or API key missing"))
 	}
-	client := storage_go.NewClient(s.config.StorageURL, s.config.ServiceRoleKey, nil)
-    storageService := storage.NewSupabaseStorageService(client, s.config.StorageURL)
+
+    storageService := storage.NewSupabaseStorageService(s.config.StorageURL, s.config.ServiceRoleKey)
     
 
 	// Initialize use cases

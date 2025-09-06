@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"coffee-tracker-backend/internal/contextkeys"
@@ -93,15 +92,15 @@ func (h *UserHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request)
         return
     }
 
-    file, handler, err := r.FormFile("file")
+    file, header, err := r.FormFile("file")
     if err != nil {
         http.Error(w, "Failed to read file", http.StatusBadRequest)
         return
     }
     defer file.Close()
 
-    // Generate a unique filename
-    filename := fmt.Sprintf("%s_%s", userID.String(), handler.Filename)
+	// Pass to service the original filename, the service will Generate a random filename with same extension.
+	filename := header.Filename
 
     // Call use case to store in Supabase (or any storage)
     avatarURL, err := h.uploadImageUC.Execute(r.Context(), userID, filename, file)
