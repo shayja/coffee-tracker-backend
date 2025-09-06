@@ -7,30 +7,33 @@ import (
 	"coffee-tracker-backend/internal/infrastructure/repositories"
 	"coffee-tracker-backend/internal/infrastructure/storage"
 	"coffee-tracker-backend/internal/usecases"
+	"fmt"
 	"time"
 
 	storage_go "github.com/supabase-community/storage-go"
 )
 
 // initializeDependencies sets up all dependencies (database, repositories, use cases, handlers)
-func (s *Server) initializeDependencies() error {
-	// Initialize database
-	db, err := database.NewSupabaseConnection(s.config.DatabaseURL)
-	if err != nil {
-		return err
+	func (s *Server) initializeDependencies() error {
+		// Initialize database
+		db, err := database.NewSupabaseConnection(s.config.DatabaseURL)
+		if err != nil {
+			return err
 	}
-
-	// Initialize Supabase Storage client
-	var storageService storage.StorageService
-
-	client := storage_go.NewClient(s.config.StorageURL, s.config.StorageApiKey, nil)
-	storageService = storage.NewSupabaseStorageService(client, s.config.StorageURL)
 
 	// Initialize repositories
 	coffeeRepo := repositories.NewCoffeeEntryRepositoryImpl(db)
 	userRepo := repositories.NewUserRepositoryImpl(db)
 	settingsRepo := repositories.NewUserSettingsRepositoryImpl(db)
 	authRepo := repositories.NewAuthRepositoryImpl(db)
+
+	// Initialize Supabase Storage client
+	if s.config.StorageURL == "" || s.config.ServiceRoleKey == "" {
+		s.logger.Fatal(fmt.Errorf("invalid storage configuration: URL or API key missing"))
+	}
+	client := storage_go.NewClient(s.config.StorageURL, s.config.ServiceRoleKey, nil)
+    storageService := storage.NewSupabaseStorageService(client, s.config.StorageURL)
+    
 
 	// Initialize use cases
 	createCoffeeUC := usecases.NewCreateCoffeeEntryUseCase(coffeeRepo)

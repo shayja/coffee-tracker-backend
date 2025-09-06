@@ -13,7 +13,7 @@ type Config struct {
 	JWTSecret   string
 	MagicOtp   	string
 	StorageURL  string
-	StorageApiKey string
+	ServiceRoleKey string
 }
 
 func Load() *Config {
@@ -24,7 +24,7 @@ func Load() *Config {
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		MagicOtp:    getEnv("MAGIC_OTP", ""),
 		StorageURL:  getEnv("SUPABASE_STORAGE_URL", ""),
-		StorageApiKey:getEnv("SUPABASE_STORAGE_API_KEY", ""),
+		ServiceRoleKey:getEnv("SUPABASE_SERVICE_KEY_ID", ""),
 	}
 }
 
