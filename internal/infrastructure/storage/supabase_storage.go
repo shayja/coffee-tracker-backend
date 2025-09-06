@@ -3,13 +3,14 @@ package storage
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
-	"net/url"
+	"path/filepath"
+	"strings"
 )
 
 // SupabaseStorageService handles interactions with Supabase storage
@@ -89,11 +90,25 @@ func (s *SupabaseStorageService) CreateBucket(ctx context.Context, name string, 
 */
 // ---------------- Objects ----------------
 
-// UploadFile uploads a file to a specified bucket and returns a signed URL
-func (s *SupabaseStorageService) UploadFile(ctx context.Context, bucket, filename string, file io.Reader) (string, error) {
+// UploadFile uploads a file to a specified bucket and returns a public URL for public buckets
+func (s *SupabaseStorageService) UploadFile(ctx context.Context, bucket, filename string, file io.Reader, imagesOnly bool) (string, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
-	part, err := writer.CreateFormFile("file", filename)
+
+	// Get MIME type from filename extension
+	mimeType := mime.TypeByExtension(filepath.Ext(filename))
+	if imagesOnly {
+		// Validate MIME type
+		if mimeType == "" || !strings.HasPrefix(mimeType, "image/") {
+			return "", fmt.Errorf("invalid file type for %s: MIME type %s is not an image", filename, mimeType)
+		}
+	}
+
+	// Create form file with explicit MIME type
+	part, err := writer.CreatePart(map[string][]string{
+		"Content-Disposition": {fmt.Sprintf(`form-data; name="file"; filename="%s"`, filepath.Base(filename))},
+		"Content-Type":        {mimeType},
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to create form file: %v", err)
 	}
@@ -102,20 +117,22 @@ func (s *SupabaseStorageService) UploadFile(ctx context.Context, bucket, filenam
 	}
 	writer.Close()
 
-	req, err := http.NewRequestWithContext(ctx,
-		"POST",
-		fmt.Sprintf("%s/object/%s/%s", s.storageURL, bucket, url.PathEscape(filename)),
-		&buf,
-	)
+	uploadURL := fmt.Sprintf("%s/object/%s/%s", s.storageURL, bucket, filename)
+	req, err := http.NewRequestWithContext(ctx, "POST", uploadURL, &buf)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %v", err)
+		return "", fmt.Errorf("failed to create request for %s: %v", uploadURL, err)
 	}
 	s.addAuthHeaders(req)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
+	// Log request details for debugging
+	log.Printf("Uploading to URL: %s", uploadURL)
+	log.Printf("Request headers: %v", req.Header)
+	log.Printf("MIME type: %s", mimeType)
+
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute request: %v", err)
+		return "", fmt.Errorf("failed to execute request for %s: %v", uploadURL, err)
 	}
 	defer resp.Body.Close()
 
@@ -125,25 +142,25 @@ func (s *SupabaseStorageService) UploadFile(ctx context.Context, bucket, filenam
 		return "", fmt.Errorf("upload failed for %s: %s", filename, string(body))
 	}
 
-	// Generate a signed URL for the uploaded file (expires in 1 hour)
-	signedURL, err := s.GenerateSignedURL(ctx, bucket, filename, 3600)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate signed URL for %s: %v", filename, err)
-	}
-	return signedURL, nil
+	// Build the permanent public URL for a public bucket
+	publicURL := fmt.Sprintf("%s/object/public/%s/%s", s.storageURL, bucket, filename)
+	log.Printf("Generated public URL: %s", publicURL)
+
+	return publicURL, nil
 }
 
 // ---------------- Signed URL ----------------
-
+/*
 // GenerateSignedURL creates a temporary signed URL for accessing a private file
 func (s *SupabaseStorageService) GenerateSignedURL(ctx context.Context, bucket, filename string, expiresInSeconds int) (string, error) {
 	payload := map[string]any{
 		"expiresIn": expiresInSeconds,
 	}
 	data, _ := json.Marshal(payload)
+	escapedFilename := url.PathEscape(filename)
 	req, err := http.NewRequestWithContext(ctx,
 		"POST",
-		fmt.Sprintf("%s/object/sign/%s/%s", s.storageURL, bucket, url.PathEscape(filename)),
+		fmt.Sprintf("%s/object/sign/%s/%s", s.storageURL, bucket, escapedFilename),
 		bytes.NewBuffer(data),
 	)
 	if err != nil {
@@ -171,13 +188,13 @@ func (s *SupabaseStorageService) GenerateSignedURL(ctx context.Context, bucket, 
 		return "", fmt.Errorf("failed to decode response for %s: %v", filename, err)
 	}
 
-	// Ensure the signed URL is absolute by combining with storageURL correctly
+	// Ensure the signed URL is absolute
 	if result.SignedURL[0] == '/' {
 		return s.storageURL + result.SignedURL, nil
 	}
 	return fmt.Sprintf("%s/%s", s.storageURL, result.SignedURL), nil
 }
-
+*/
 // ---------------- Helpers ----------------
 
 // addAuthHeaders adds authentication headers to the request

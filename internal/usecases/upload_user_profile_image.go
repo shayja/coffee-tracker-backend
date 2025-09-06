@@ -38,7 +38,7 @@ func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uui
 	userFolderPath := fmt.Sprintf("%s/%s%s", userID, utils.GenerateString(avatarFileNameLangth), extension)
 
     // Upload to storage
-    url, err := uc.storage.UploadFile(ctx, bucketName, userFolderPath, file)
+    url, err := uc.storage.UploadFile(ctx, bucketName, userFolderPath, file, true)
 
     if err != nil {
         return "", err
