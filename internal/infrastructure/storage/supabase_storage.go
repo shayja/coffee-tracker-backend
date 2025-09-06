@@ -97,11 +97,9 @@ func (s *SupabaseStorageService) UploadFile(ctx context.Context, bucket, filenam
 
 	// Get MIME type from filename extension
 	mimeType := mime.TypeByExtension(filepath.Ext(filename))
-	if imagesOnly {
-		// Validate MIME type
-		if mimeType == "" || !strings.HasPrefix(mimeType, "image/") {
-			return "", fmt.Errorf("invalid file type for %s: MIME type %s is not an image", filename, mimeType)
-		}
+	// Validate MIME type
+	if imagesOnly && mimeType == "" || !strings.HasPrefix(mimeType, "image/") {
+		return "", fmt.Errorf("invalid file type for %s: MIME type %s is not an image", filename, mimeType)
 	}
 
 	// Create form file with explicit MIME type
