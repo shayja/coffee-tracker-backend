@@ -24,6 +24,7 @@ import (
 	userRepo := repositories.NewUserRepositoryImpl(db)
 	settingsRepo := repositories.NewUserSettingsRepositoryImpl(db)
 	authRepo := repositories.NewAuthRepositoryImpl(db)
+	taperingRepo := repositories.NewTaperingJourneyRepositoryImpl(db)
 
 	// Initialize Supabase Storage client
 	if s.config.StorageURL == "" || s.config.ServiceRoleKey == "" {
@@ -46,6 +47,11 @@ import (
 	saveRefreshTokenUC := usecases.NewSaveRefreshTokenUseCase(authRepo)
 	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)
 	deleteRefreshTokenUC := usecases.NewDeleteRefreshTokenUseCase(authRepo)
+
+	createTaperingJourneyUC := usecases.NewCreateTaperingJourneyUseCase(taperingRepo)
+	getTaperingJourneysUC := usecases.NewGetTaperingJourneysUseCase(taperingRepo)
+	updateTaperingJourneyUC := usecases.NewUpdateTaperingJourneyUseCase(taperingRepo)
+	deleteTaperingJourneyUC := usecases.NewDeleteTaperingJourneyUseCase(taperingRepo)
 
 
 	getProfileUC := usecases.NewGetUserProfileUseCase(userRepo)
@@ -86,7 +92,12 @@ import (
 		deleteImageUC,
 	)
 
-
+	s.taperingHandler = handlers.NewTaperingJourneyHandler(
+		createTaperingJourneyUC,
+		getTaperingJourneysUC,
+		updateTaperingJourneyUC,
+		deleteTaperingJourneyUC,
+	)
 
 
 

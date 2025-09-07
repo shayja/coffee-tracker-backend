@@ -40,7 +40,6 @@ func (s *Server) setupRoutes() {
 	protected.HandleFunc("/user/avatar", s.userHandler.UploadProfileImage).Methods(http.MethodPost)
 	protected.HandleFunc("/user/avatar", s.userHandler.DeleteProfileImage).Methods(http.MethodDelete)
 
-
 	// Coffee entry routes
 	protected.HandleFunc("/entries", s.coffeeHandler.GetEntries).Methods(http.MethodGet)
 	protected.HandleFunc("/entries", s.coffeeHandler.CreateEntry).Methods(http.MethodPost)
@@ -51,4 +50,11 @@ func (s *Server) setupRoutes() {
 	// User settings routes
 	protected.HandleFunc("/settings", s.userSettingsHandler.GetAll).Methods(http.MethodGet)
 	protected.HandleFunc("/settings/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
+
+	// Tapering journey routes
+	protected.HandleFunc("/tapering", s.taperingHandler.GetJourneys).Methods(http.MethodGet)
+	protected.HandleFunc("/tapering", s.taperingHandler.CreateJourney).Methods(http.MethodPost)
+	//protected.HandleFunc("/tapering/{id}", s.taperingHandler.get).Methods(http.MethodGet)
+	protected.HandleFunc("/tapering/{id}", s.taperingHandler.UpdateJourney).Methods(http.MethodPut)
+	protected.HandleFunc("/tapering/{id}", s.taperingHandler.DeleteJourney).Methods(http.MethodDelete)
 }

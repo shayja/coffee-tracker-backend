@@ -10,10 +10,8 @@ import (
 	"strings"
 
 	"coffee-tracker-backend/internal/contextkeys"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
-
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type CoffeeEntryHandler struct {
@@ -94,7 +92,7 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get entry ID from path parameter
-	entryID, err := getEntryIDByRoute(r, w)
+	entryID, err := utils.GetEntryIDByRoute(r, w)
 	if err != nil {
 		return
 	}
@@ -158,7 +156,7 @@ func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Get entry ID from path parameter
-	entryID, err := getEntryIDByRoute(r, w)
+	entryID, err := utils.GetEntryIDByRoute(r, w)
 	if err != nil {
 		return
 	}
@@ -195,18 +193,3 @@ func (h *CoffeeEntryHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stats)
 }
 
-func getEntryIDByRoute(r *http.Request, w http.ResponseWriter) (uuid.UUID, error) {
-	vars := mux.Vars(r)          // extract path variables
-	entryIDStr, ok := vars["id"] // get the {id} value
-	if !ok || entryIDStr == "" {
-		http.Error(w, "Missing entry ID", http.StatusBadRequest)
-		return uuid.UUID{}, nil
-	}
-
-	entryID, err := uuid.Parse(entryIDStr)
-	if err != nil {
-		http.Error(w, "Invalid entry ID format", http.StatusBadRequest)
-		return uuid.UUID{}, nil
-	}
-	return entryID, err
-}
