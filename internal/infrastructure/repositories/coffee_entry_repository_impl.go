@@ -8,6 +8,7 @@ import (
 
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 
 	"github.com/google/uuid"
 )
@@ -29,7 +30,7 @@ func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
 		entry.UserID,
-		entry.Notes,
+		utils.NullIfEmpty(entry.Notes),
 		entry.Timestamp,
 	)
 	
@@ -45,7 +46,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 	
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
-		entry.Notes,
+		utils.NullIfEmpty(entry.Notes),
 		entry.Timestamp,
 		time.Now(),
 	)

@@ -10,6 +10,7 @@ import (
 	"coffee-tracker-backend/internal/domain/entities"
 	"coffee-tracker-backend/internal/domain/repositories"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 
 	"github.com/google/uuid"
 )
@@ -30,9 +31,9 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user *entities.User) er
 	
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
-		user.Email,
-		user.Mobile,
-		user.Name,
+		utils.ToLower(user.Email),
+		utils.NullIfEmpty(user.Mobile),
+		utils.NullIfEmpty(user.Name),
 		user.CreatedAt,
 		user.UpdatedAt,
 	)
@@ -119,9 +120,9 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) er
 	
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
-		user.Email,
-		user.Mobile,
-		user.Name,
+		utils.ToLower(user.Email),
+		utils.NullIfEmpty(user.Mobile),
+		utils.NullIfEmpty(user.Name),
 		user.UpdatedAt,
 	)
 	
@@ -142,12 +143,12 @@ func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID
 
 	if req.Name != nil {
 		query += `name = $` + strconv.Itoa(i) + `, `
-		params = append(params, *req.Name)
+		params = append(params, utils.NullIfEmpty(*req.Name))
 		i++
 	}
 	if req.Email != nil {
 		query += `email = $` + strconv.Itoa(i) + `, `
-		params = append(params, *req.Email)
+		params = append(params, utils.ToLower(*req.Email))
 		i++
 	}
 	// if req.Address != nil {
