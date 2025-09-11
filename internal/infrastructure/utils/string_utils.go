@@ -12,7 +12,7 @@ func NullIfEmpty(s string) interface{} {
 }
 
 // SafeToLower trims the input and returns a lowercase version. If the input is empty or only whitespace, returns nil
-func NullIfEmpty(s string) interface{}  {
+func ToLower(s string) interface{}  {
 	if NullIfEmpty(s) == nil {
 		return nil
 	}
