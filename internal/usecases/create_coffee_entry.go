@@ -22,7 +22,7 @@ func NewCreateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 }
 
 type CreateCoffeeEntryRequest struct {
-    Notes     string    `json:"notes"`
+    Notes     *string    `json:"notes"`
     Timestamp time.Time `json:"timestamp"`
 }
 

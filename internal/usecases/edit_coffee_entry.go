@@ -23,7 +23,7 @@ func NewEditCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) *E
 
 type EditCoffeeEntryRequest struct {
 	ID        uuid.UUID `json:"id"`
-    Notes     string    `json:"notes"`
+    Notes     *string    `json:"notes"`
     Timestamp time.Time `json:"timestamp"`
 }
 
@@ -40,7 +40,7 @@ func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEnt
 		ID:         req.ID,
 		UserID:     userID,
 		// CoffeeType: req.CoffeeType,
-		// Size:       req.Size,
+		//Size:       req.Size,
 		// Caffeine:   req.Caffeine,
 		Notes:      req.Notes,
 		// Location:   req.Location,

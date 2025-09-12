@@ -13,7 +13,7 @@ type CoffeeEntry struct {
 	//CoffeeType  string    `json:"coffee_type" db:"coffee_type"`
 	//Size        string    `json:"size" db:"size"`
 	//Caffeine    int       `json:"caffeine_mg" db:"caffeine_mg"`
-	Notes       string    `json:"notes" db:"notes"`
+	Notes       *string    `json:"notes" db:"notes"`
 	//Location    string    `json:"location" db:"location"`
 	//Price       float64   `json:"price" db:"price"`
 	//Rating      int       `json:"rating" db:"rating"` // 1-5 scale
