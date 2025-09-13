@@ -22,8 +22,10 @@ func NewCreateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 }
 
 type CreateCoffeeEntryRequest struct {
-    Notes     *string    `json:"notes"`
-    Timestamp time.Time `json:"timestamp"`
+    Notes     *string    `json:"notes,omitempty"`
+	Timestamp time.Time  `json:"timestamp"`
+	Latitude  *float64   `json:"latitude,omitempty"`
+    Longitude *float64   `json:"longitude,omitempty"`
 }
 
 func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
@@ -45,6 +47,8 @@ func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffe
 		// Location:   req.Location,
 		// Price:      req.Price,
 		// Rating:     req.Rating,
+		Latitude:   req.Latitude,
+    	Longitude:  req.Longitude,
 		Timestamp: req.Timestamp,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),

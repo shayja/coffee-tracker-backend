@@ -10,16 +10,18 @@ import (
 type CoffeeEntry struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	UserID      uuid.UUID `json:"user_id" db:"user_id"`
-	//CoffeeType  string    `json:"coffee_type" db:"coffee_type"`
-	//Size        string    `json:"size" db:"size"`
-	//Caffeine    int       `json:"caffeine_mg" db:"caffeine_mg"`
+	//CoffeeType  string   `json:"coffee_type" db:"coffee_type"`
+	//Size        string   `json:"size" db:"size"`
+	//Caffeine    int      `json:"caffeine_mg" db:"caffeine_mg"`
 	Notes       *string    `json:"notes" db:"notes"`
-	//Location    string    `json:"location" db:"location"`
-	//Price       float64   `json:"price" db:"price"`
-	//Rating      int       `json:"rating" db:"rating"` // 1-5 scale
-	Timestamp   time.Time `json:"timestamp" db:"created_at"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	//Location    string   `json:"location" db:"location"`
+	//Price       float64  `json:"price" db:"price"`
+	//Rating      int      `json:"rating" db:"rating"` // 1-5 scale
+	Latitude  	*float64   `json:"latitude" db:"latitude"`
+    Longitude 	*float64   `json:"longitude" db:"longitude"`
+	Timestamp   time.Time  `json:"timestamp" db:"created_at"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 type CoffeeStats struct {
