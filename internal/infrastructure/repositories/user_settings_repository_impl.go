@@ -3,6 +3,7 @@ package repositories
 
 import (
 	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/domain/repositories"
 	"context"
 	"database/sql"
 	"fmt"
@@ -14,7 +15,7 @@ type UserSettingsRepositoryImpl struct {
     db *sql.DB
 }
 
-func NewUserSettingsRepositoryImpl(db *sql.DB) *UserSettingsRepositoryImpl {
+func NewUserSettingsRepositoryImpl(db *sql.DB) repositories.UserSettingsRepository {
     return &UserSettingsRepositoryImpl{db: db}
 }
 

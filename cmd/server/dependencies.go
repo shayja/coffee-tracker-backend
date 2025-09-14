@@ -25,6 +25,7 @@ import (
 	settingsRepo := repositories.NewUserSettingsRepositoryImpl(db)
 	authRepo := repositories.NewAuthRepositoryImpl(db)
 	taperingRepo := repositories.NewTaperingJourneyRepositoryImpl(db)
+	genericKvRepo := repositories.NewGenericKVRepositoryImpl(db)
 
 	// Initialize Supabase Storage client
 	if s.config.StorageURL == "" || s.config.ServiceRoleKey == "" {
@@ -47,6 +48,8 @@ import (
 	saveRefreshTokenUC := usecases.NewSaveRefreshTokenUseCase(authRepo)
 	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)
 	deleteRefreshTokenUC := usecases.NewDeleteRefreshTokenUseCase(authRepo)
+
+	getGenericKvUC := usecases.NewGetGenericKVUseCase(genericKvRepo)
 
 	createTaperingJourneyUC := usecases.NewCreateTaperingJourneyUseCase(taperingRepo)
 	getTaperingJourneysUC := usecases.NewGetTaperingJourneysUseCase(taperingRepo)
@@ -84,6 +87,8 @@ import (
 		deleteRefreshTokenUC,
 	)
 	s.userRepo = userRepo
+
+	s.genericKvHandler = handlers.NewGenericKVHandler(getGenericKvUC)
 
 	s.userHandler = handlers.NewUserHandler(
 		getProfileUC,

@@ -19,18 +19,19 @@ import (
 
 // Server encapsulates the HTTP server and its dependencies
 type Server struct {
-	config            *config.Config
-	router            *mux.Router
-	httpServer        *http.Server
-	logger            *log.Logger
-	userHandler 	  *handlers.UserHandler
-	coffeeHandler     *handlers.CoffeeEntryHandler
+	config            	*config.Config
+	router            	*mux.Router
+	httpServer        	*http.Server
+	logger            	*log.Logger
+	userHandler 	  	*handlers.UserHandler
+	genericKvHandler	*handlers.GenericKVHandler
+	coffeeHandler     	*handlers.CoffeeEntryHandler
 	userSettingsHandler *handlers.UserSettingsHandler
-	healthHandler     *handlers.HealthHandler
-	authHandler       *handlers.AuthHandler
-	taperingHandler	*handlers.TaperingJourneyHandler
-	jwtService        *auth.JWTService
-	userRepo          repositories.UserRepository
+	healthHandler     	*handlers.HealthHandler
+	authHandler       	*handlers.AuthHandler
+	taperingHandler		*handlers.TaperingJourneyHandler
+	jwtService        	*auth.JWTService
+	userRepo          	repositories.UserRepository
 	//db                *database.Supabase // Added to manage DB connection
 }
 

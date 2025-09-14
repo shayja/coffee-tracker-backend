@@ -10,7 +10,7 @@ import (
 type CoffeeEntry struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	UserID      uuid.UUID `json:"user_id" db:"user_id"`
-	//CoffeeType  string   `json:"coffee_type" db:"coffee_type"`
+	CoffeeTypeID *int      `json:"coffee_type_id" db:"coffee_type_id"`     
 	//Size        string   `json:"size" db:"size"`
 	//Caffeine    int      `json:"caffeine_mg" db:"caffeine_mg"`
 	Notes       *string    `json:"notes" db:"notes"`

@@ -23,13 +23,14 @@ func NewCoffeeEntryRepositoryImpl(db *sql.DB) repositories.CoffeeEntryRepository
 
 func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.CoffeeEntry) error {
 	query := `
-    INSERT INTO coffee_entries (id, user_id, notes, latitude, longitude, timestamp)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO coffee_entries (id, user_id, notes, coffee_type_id, latitude, longitude, timestamp)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
 		entry.UserID,
 		utils.NullIfEmpty(entry.Notes),
+		entry.CoffeeTypeID,
 		entry.Latitude,
 		entry.Longitude,
 		entry.Timestamp,
@@ -57,7 +58,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 
 func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, notes, latitude, longitude, timestamp, created_at, updated_at
+		SELECT id, user_id, notes, coffee_type_idm latitude, longitude, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE id = $1
 		LIMIT 1
@@ -68,6 +69,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 		&entry.ID,
 		&entry.UserID,
 		&entry.Notes,
+		&entry.CoffeeTypeID,
 		&entry.Latitude,
 		&entry.Longitude,
 		&entry.Timestamp,
@@ -84,7 +86,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 
 func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, notes, latitude, longitude, timestamp, created_at, updated_at
+		SELECT id, user_id, notes, coffee_type_id, latitude, longitude, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE user_id = $1
 		ORDER BY timestamp ASC
@@ -104,6 +106,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 			&entry.ID,
 			&entry.UserID,
 			&entry.Notes,
+			&entry.CoffeeTypeID,
 			&entry.Latitude,
 			&entry.Longitude,
 			&entry.Timestamp,
@@ -122,7 +125,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserID(ctx context.Context, userID uuid
 func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context, userID uuid.UUID, limit int, offset int, startDate, endDate time.Time) ([]*entities.CoffeeEntry, error) {
 	
 	query := `
-		SELECT id, user_id, notes, latitude, longitude, timestamp, created_at, updated_at
+		SELECT id, user_id, notes, coffee_type_id, latitude, longitude, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE user_id = $1 
 		AND timestamp >= $4 AND timestamp < $5
@@ -143,6 +146,7 @@ func (r *CoffeeEntryRepositoryImpl) GetByUserIDAndDateRange(ctx context.Context,
 			&entry.ID,
 			&entry.UserID,
 			&entry.Notes,
+			&entry.CoffeeTypeID,
 			&entry.Latitude,
 			&entry.Longitude,
 			&entry.Timestamp,

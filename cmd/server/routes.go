@@ -40,6 +40,9 @@ func (s *Server) setupRoutes() {
 	protected.HandleFunc("/user/avatar", s.userHandler.UploadProfileImage).Methods(http.MethodPost)
 	protected.HandleFunc("/user/avatar", s.userHandler.DeleteProfileImage).Methods(http.MethodDelete)
 
+	protected.HandleFunc("/kv", s.genericKvHandler.Get).Methods(http.MethodGet)
+
+
 	// Coffee entry routes
 	protected.HandleFunc("/entries", s.coffeeHandler.GetEntries).Methods(http.MethodGet)
 	protected.HandleFunc("/entries", s.coffeeHandler.CreateEntry).Methods(http.MethodPost)
