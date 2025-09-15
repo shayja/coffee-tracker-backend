@@ -18,5 +18,15 @@ func NewGetTaperingJourneysUseCase(repo repositories.TaperingJourneyRepository) 
 }
 
 func (uc *GetTaperingJourneysUseCase) Execute(ctx context.Context, userID uuid.UUID) ([]*entities.TaperingJourney, error) {
-	return uc.Repo.GetByUserID(ctx, userID)
+	
+	entries, err := uc.Repo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, ErrInternalError
+	}
+
+	if entries == nil {
+		return []*entities.TaperingJourney{}, nil
+	}
+	
+	return entries, nil
 }
