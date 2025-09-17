@@ -23,7 +23,8 @@ type AuthHandler struct {
 	deleteRefreshTokenUC *usecases.DeleteRefreshTokenUseCase
 }
 
-func NewAuthHandler(jwtService *auth.JWTService, 
+func NewAuthHandler(
+	jwtService *auth.JWTService, 
 	getUserByIDUC *usecases.GetUserByIDUseCase, 
 	getUserByMobileUC *usecases.GetUserByMobileUseCase, 
 	genereteOtpUC *usecases.GenerateOtpUseCase,
@@ -69,7 +70,15 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Generated OTP for user %s: %s", user.ID, otp)
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "OTP sent successfully"})
+
+	// Return response
+	response := dto.SendOtpResponse{
+		Message: "OTP sent successfully",
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
 }
 
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {

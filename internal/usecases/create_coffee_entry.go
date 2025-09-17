@@ -26,7 +26,7 @@ type CreateCoffeeEntryRequest struct {
 	Timestamp time.Time `json:"timestamp"`
 	Latitude  *float64  `json:"latitude,omitempty"`
     Longitude *float64  `json:"longitude,omitempty"`
-	CoffeeType *int    	`json:"coffeeType,omitempty"`
+	CoffeeType *int    	`json:"coffee_type_id,omitempty"`
 }
 
 func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {

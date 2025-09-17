@@ -16,6 +16,10 @@ type RefreshTokenRequest struct {
 }
 
 // Response DTOs
+type SendOtpResponse struct {
+	Message  string `json:"message"`
+}
+
 type AuthResponse struct {
 	AccessToken  string     `json:"access_token"`
 	RefreshToken string     `json:"refresh_token"`

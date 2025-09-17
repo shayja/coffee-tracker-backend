@@ -25,6 +25,7 @@ type EditCoffeeEntryRequest struct {
 	ID        uuid.UUID `json:"id"`
     Notes     *string    `json:"notes"`
     Timestamp time.Time `json:"timestamp"`
+	CoffeeType *int    	`json:"coffee_type_id,omitempty"`
 }
 
 func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
@@ -37,17 +38,17 @@ func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEnt
 	// }
 
 	entry := &entities.CoffeeEntry{
-		ID:         req.ID,
-		UserID:     userID,
-		// CoffeeType: req.CoffeeType,
-		//Size:       req.Size,
+		ID:         	req.ID,
+		UserID:     	userID,
+		CoffeeTypeID: 	req.CoffeeType,
+		//Size:       	req.Size,
 		// Caffeine:   req.Caffeine,
-		Notes:      req.Notes,
+		Notes:      	req.Notes,
 		// Location:   req.Location,
 		// Price:      req.Price,
 		// Rating:     req.Rating,
-		Timestamp: req.Timestamp,
-		UpdatedAt:  time.Now(),
+		Timestamp: 		req.Timestamp,
+		UpdatedAt:  	time.Now(),
 	}
 
 	if err := uc.coffeeRepo.Update(ctx, entry); err != nil {

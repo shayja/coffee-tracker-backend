@@ -42,7 +42,7 @@ func (r *CoffeeEntryRepositoryImpl) Create(ctx context.Context, entry *entities.
 func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.CoffeeEntry) error {
 	query := `
 		UPDATE coffee_entries 
-		SET notes = $2, timestamp = $3, updated_at = $4
+		SET notes = $2, timestamp = $3, coffee_type_id =$4, updated_at = $5
 		WHERE id = $1
 	`
 	
@@ -50,6 +50,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 		entry.ID,
 		utils.NullIfEmpty(entry.Notes),
 		entry.Timestamp,
+		entry.CoffeeTypeID,
 		time.Now(),
 	)
 	
@@ -58,7 +59,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 
 func (r *CoffeeEntryRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.CoffeeEntry, error) {
 	query := `
-		SELECT id, user_id, notes, coffee_type_idm latitude, longitude, timestamp, created_at, updated_at
+		SELECT id, user_id, notes, coffee_type_id, latitude, longitude, timestamp, created_at, updated_at
 		FROM coffee_entries
 		WHERE id = $1
 		LIMIT 1
