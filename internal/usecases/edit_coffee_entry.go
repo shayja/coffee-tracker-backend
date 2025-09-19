@@ -23,13 +23,14 @@ func NewEditCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) *E
 
 type EditCoffeeEntryRequest struct {
 	ID        uuid.UUID `json:"id"`
-    Notes     *string    `json:"notes"`
+    Notes     *string   `json:"notes,omitempty"`
     Timestamp time.Time `json:"timestamp"`
-	CoffeeType *int    	`json:"coffee_type_id,omitempty"`
+	CoffeeType *int    	`json:"type,omitempty"`
+	Size *int    		`json:"size,omitempty"`
 }
 
 func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
-	// if req.CoffeeType == "" {
+	// if req.CoffeeType == nil {
 	// 	return nil, ErrInvalidInput
 	// }
 	
@@ -41,10 +42,9 @@ func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEnt
 		ID:         	req.ID,
 		UserID:     	userID,
 		CoffeeTypeID: 	req.CoffeeType,
-		//Size:       	req.Size,
+		SizeID:       	req.Size,
 		// Caffeine:   req.Caffeine,
 		Notes:      	req.Notes,
-		// Location:   req.Location,
 		// Price:      req.Price,
 		// Rating:     req.Rating,
 		Timestamp: 		req.Timestamp,

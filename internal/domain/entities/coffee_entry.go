@@ -10,11 +10,10 @@ import (
 type CoffeeEntry struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	UserID      uuid.UUID `json:"user_id" db:"user_id"`
-	CoffeeTypeID *int      `json:"coffee_type_id" db:"coffee_type_id"`     
-	//Size        string   `json:"size" db:"size"`
-	//Caffeine    int      `json:"caffeine_mg" db:"caffeine_mg"`
+	CoffeeTypeID *int     `json:"type" db:"coffee_type_id"`     
+	SizeID      *int  	  `json:"size" db:"size_id"`
+	//Caffeine    *int     `json:"caffeine_mg" db:"caffeine_mg"`
 	Notes       *string    `json:"notes" db:"notes"`
-	//Location    string   `json:"location" db:"location"`
 	//Price       float64  `json:"price" db:"price"`
 	//Rating      int      `json:"rating" db:"rating"` // 1-5 scale
 	Latitude  	*float64   `json:"latitude" db:"latitude"`

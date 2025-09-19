@@ -45,7 +45,15 @@ func (r *GenericKVRepositoryImpl) GetKV(ctx context.Context, typeID int, languag
             WHERE l.code = $1
             ORDER BY ct.order_by ASC
         `
-    // Add more cases for future types (e.g., for other dictionaries)
+    case 2: // sizes
+        query = `
+            SELECT s.id, st.name
+            FROM coffee_sizes s
+            JOIN coffee_size_translations st ON s.id = st.coffee_size_id
+            JOIN languages l ON st.language_id = l.id
+            WHERE l.code = $1
+            ORDER BY s.order_by ASC
+        `
     default:
         return nil, fmt.Errorf("unsupported typeID: %d", typeID)
     }
