@@ -53,11 +53,4 @@ func (s *Server) setupRoutes() {
 	// User settings routes
 	protected.HandleFunc("/settings", s.userSettingsHandler.GetAll).Methods(http.MethodGet)
 	protected.HandleFunc("/settings/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
-
-	// Tapering journey routes
-	protected.HandleFunc("/tapering", s.taperingHandler.GetJourneys).Methods(http.MethodGet)
-	protected.HandleFunc("/tapering", s.taperingHandler.CreateJourney).Methods(http.MethodPost)
-	//protected.HandleFunc("/tapering/{id}", s.taperingHandler.get).Methods(http.MethodGet)
-	protected.HandleFunc("/tapering/{id}", s.taperingHandler.UpdateJourney).Methods(http.MethodPut)
-	protected.HandleFunc("/tapering/{id}", s.taperingHandler.DeleteJourney).Methods(http.MethodDelete)
 }

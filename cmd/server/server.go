@@ -29,7 +29,6 @@ type Server struct {
 	userSettingsHandler *handlers.UserSettingsHandler
 	healthHandler     	*handlers.HealthHandler
 	authHandler       	*handlers.AuthHandler
-	taperingHandler		*handlers.TaperingJourneyHandler
 	jwtService        	*auth.JWTService
 	userRepo          	repositories.UserRepository
 	//db                *database.Supabase // Added to manage DB connection
