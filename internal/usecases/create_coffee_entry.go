@@ -31,10 +31,7 @@ type CreateCoffeeEntryRequest struct {
 }
 
 func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
-	// if req.CoffeeType == "" {
-	// 	return nil, ErrInvalidInput
-	// }
-	
+
 	// if req.Rating < 1 || req.Rating > 5 {
 	// 	return nil, ErrInvalidInput
 	// }
