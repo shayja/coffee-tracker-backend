@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/dto/user_dto.go
 package dto
 
 import (

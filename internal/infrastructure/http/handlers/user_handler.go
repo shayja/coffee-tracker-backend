@@ -1,3 +1,4 @@
+// file: internal/infrastructure/http/handlers/user_handler.go
 package handlers
 
 import (

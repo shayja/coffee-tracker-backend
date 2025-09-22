@@ -1,3 +1,4 @@
+// file: internal/usecases/get_user_profile.go
 package usecases
 
 import (

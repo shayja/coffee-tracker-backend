@@ -1,3 +1,4 @@
+// file: cmd/server/server.go
 package main
 
 import (

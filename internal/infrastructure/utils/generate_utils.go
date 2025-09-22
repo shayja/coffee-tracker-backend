@@ -1,3 +1,4 @@
+// file: internal/infrastructure/utils/generate_utils.go
 package utils
 
 import (

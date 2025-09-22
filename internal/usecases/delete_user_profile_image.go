@@ -1,3 +1,4 @@
+// file: internal/usecases/delete_user_profile_image.go
 package usecases
 
 import (

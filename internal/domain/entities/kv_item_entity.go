@@ -3,5 +3,5 @@ package entities
 
 type KVItem struct {
     Key   int `json:"key"`
-    Value string  `json:"value"`     // localized name/label
+    Value string  `json:"value"`
 }

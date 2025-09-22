@@ -1,3 +1,4 @@
+// file: cmd/server/dependencies.go
 package main
 
 import (
