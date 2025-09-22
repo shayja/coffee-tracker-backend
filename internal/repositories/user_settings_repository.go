@@ -1,8 +1,8 @@
-// file: internal/domain/repositories/user_settings_repository.go
+// file: internal/repositories/user_settings_repository.go
 package repositories
 
 import (
-	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/entities"
 	"context"
 
 	"github.com/google/uuid"

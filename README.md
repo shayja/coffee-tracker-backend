@@ -135,8 +135,8 @@ go test -cover ./...
 
 ### Adding New Features
 
-1. Define entities in `internal/domain/entities/`
-2. Create repository interface in `internal/domain/repositories/`
+1. Define entities in `internal/entities/`
+2. Create repository interface in `internal/repositories/`
 3. Implement use case in `internal/usecases/`
 4. Create repository implementation in `internal/infrastructure/repositories/`
 5. Add HTTP handler in `internal/infrastructure/http/handlers/`

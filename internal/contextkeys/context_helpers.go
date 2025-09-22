@@ -2,7 +2,7 @@
 package contextkeys
 
 import (
-	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/entities"
 	"context"
 
 	"github.com/google/uuid"

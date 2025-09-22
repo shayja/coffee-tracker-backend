@@ -2,8 +2,8 @@
 package repositories
 
 import (
-	"coffee-tracker-backend/internal/domain/entities"
-	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/repositories"
 	"context"
 	"database/sql"
 	"fmt"

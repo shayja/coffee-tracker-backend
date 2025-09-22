@@ -2,7 +2,7 @@
 package repositories
 
 import (
-	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/repositories"
 	"context"
 	"database/sql"
 	"time"

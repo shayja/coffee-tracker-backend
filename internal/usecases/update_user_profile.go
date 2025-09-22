@@ -4,8 +4,8 @@ package usecases
 import (
 	"context"
 
-	"coffee-tracker-backend/internal/domain/repositories"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
 )

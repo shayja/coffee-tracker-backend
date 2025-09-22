@@ -4,8 +4,8 @@ package usecases
 import (
 	"context"
 
-	"coffee-tracker-backend/internal/domain/entities"
-	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/repositories"
 )
 
 // GetUserByMobileUseCase retrieves a user by mobile number

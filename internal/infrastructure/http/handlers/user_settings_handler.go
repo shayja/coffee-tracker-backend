@@ -3,7 +3,7 @@ package handlers
 
 import (
 	"coffee-tracker-backend/internal/contextkeys"
-	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/entities"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"net/http"

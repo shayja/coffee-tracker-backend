@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"coffee-tracker-backend/internal/domain/repositories"
 	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
+	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/gorilla/mux"
 )

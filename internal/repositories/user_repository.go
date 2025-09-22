@@ -1,11 +1,11 @@
-// file: internal/domain/repositories/user_repository.go
+// file: internal/repositories/user_repository.go
 package repositories
 
 import (
 	"context"
 	"time"
 
-	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/entities"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
 
 	"github.com/google/uuid"

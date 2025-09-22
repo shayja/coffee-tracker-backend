@@ -1,4 +1,4 @@
-// file: internal/domain/entities/user_settings.go
+// file: internal/entities/user_settings.go
 package entities
 
 import "time"

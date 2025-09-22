@@ -1,4 +1,4 @@
-// file: internal/domain/entities/user.go
+// file: internal/entities/user.go
 package entities
 
 import (

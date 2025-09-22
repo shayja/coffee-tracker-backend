@@ -1,4 +1,4 @@
-// file: internal/domain/entities/kv_item_entity.go
+// file: internal/entities/kv_item_entity.go
 package entities
 
 type KVItem struct {

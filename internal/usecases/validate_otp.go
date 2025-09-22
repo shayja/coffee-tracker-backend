@@ -2,8 +2,8 @@
 package usecases
 
 import (
-	"coffee-tracker-backend/internal/domain/repositories"
 	"coffee-tracker-backend/internal/infrastructure/config"
+	"coffee-tracker-backend/internal/repositories"
 	"context"
 
 	"github.com/google/uuid"

@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
 )

@@ -1,8 +1,8 @@
-// file: internal/domain/repositories/generic_kv_repository.go
+// file: internal/repositories/generic_kv_repository.go
 package repositories
 
 import (
-	"coffee-tracker-backend/internal/domain/entities"
+	"coffee-tracker-backend/internal/entities"
 	"context"
 )
 

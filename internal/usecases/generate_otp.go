@@ -2,7 +2,7 @@
 package usecases
 
 import (
-	"coffee-tracker-backend/internal/domain/repositories"
+	"coffee-tracker-backend/internal/repositories"
 	"context"
 	"crypto/rand"
 	"fmt"
