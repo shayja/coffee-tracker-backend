@@ -16,6 +16,6 @@ func NewDeleteRefreshTokenUseCase(authRepo repositories.AuthRepository) *DeleteR
 	return &DeleteRefreshTokenUseCase{authRepo: authRepo}
 }
 
-func (uc *DeleteRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
-	return uc.authRepo.DeleteRefreshToken(ctx, userID)
+func (uc *DeleteRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID) error {
+	return uc.authRepo.DeleteRefreshToken(ctx, userID, deviceID)
 }

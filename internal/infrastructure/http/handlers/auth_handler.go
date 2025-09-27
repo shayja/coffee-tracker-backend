@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -109,6 +111,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	refreshToken, err := h.jwtService.GenerateRefreshToken(user.ID)
+	log.Printf("Generated refresh token for user %s: %s", user.ID, refreshToken)
 	if err != nil {
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
@@ -116,7 +119,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 
 	// Save refresh token to database
 	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, refreshToken, refreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, req.DeviceID, refreshToken, refreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -138,8 +141,8 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshTokenRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" {
-		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" ||  req.DeviceID == uuid.Nil {
+		http.Error(w, "Missing arguments", http.StatusBadRequest)
 		return
 	}
 
@@ -164,18 +167,20 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify refresh token exists in database and matches
-	storedToken, expiresAt, err := h.getRefreshTokenUC.Execute(r.Context(), userID)
+	storedToken, expiresAt, err := h.getRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID)
 	if err != nil {
 		http.Error(w, "Refresh token not found", http.StatusUnauthorized)
 		return
 	}
 
 	if storedToken != req.RefreshToken {
+		log.Printf("Refresh token mismatch for user %s: expected %s, got %s", userID, storedToken, req.RefreshToken)
 		http.Error(w, "Refresh token mismatch", http.StatusUnauthorized)
 		return
 	}
 
 	if time.Now().After(expiresAt) {
+		log.Printf("Refresh token expired for user %s", userID)
 		http.Error(w, "Refresh token expired", http.StatusUnauthorized)
 		return
 	}
@@ -195,7 +200,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	// Save new refresh token (rotate)
 	newRefreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, newRefreshToken, newRefreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID, newRefreshToken, newRefreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -216,9 +221,14 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	var req dto.DeleteTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil  || req.DeviceID == uuid.Nil{
+		http.Error(w, "Invalid or missing device_id", http.StatusBadRequest)
+		return
+	}
 
 	// Delete refresh token from database
-	if err := h.deleteRefreshTokenUC.Execute(r.Context(), userID); err != nil {
+	if err := h.deleteRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID); err != nil {
 		http.Error(w, "Failed to logout", http.StatusInternalServerError)
 		return
 	}
@@ -226,12 +236,18 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 }
-
+/*
 func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from context
 	userID, ok := contextkeys.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req dto.CreateTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil ||  req.DeviceID == uuid.Nil {
+		http.Error(w, "Missing arguments", http.StatusBadRequest)
 		return
 	}
 
@@ -253,7 +269,7 @@ func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 
 	// Save refresh token to database
 	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
-	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, refreshToken, refreshExpiry); err != nil {
+	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID, refreshToken, refreshExpiry); err != nil {
 		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
 		return
 	}
@@ -267,7 +283,7 @@ func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
+*/
 // Optional: Get current user profile
 func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userID, ok := contextkeys.UserIDFromContext(r.Context())

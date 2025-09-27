@@ -17,6 +17,6 @@ func NewGetRefreshTokenUseCase(authRepo repositories.AuthRepository) *GetRefresh
 	return &GetRefreshTokenUseCase{authRepo: authRepo}
 }
 
-func (uc *GetRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID) (string, time.Time, error) {
-	return uc.authRepo.GetRefreshToken(ctx, userID)
+func (uc *GetRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID) (string, time.Time, error) {
+	return uc.authRepo.GetRefreshToken(ctx, userID, deviceID)
 }

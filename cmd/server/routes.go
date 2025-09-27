@@ -24,6 +24,7 @@ func (s *Server) setupRoutes() {
 	api.HandleFunc("/auth/request-otp", s.authHandler.RequestOTP).Methods(http.MethodPost)
 	api.HandleFunc("/auth/verify-otp", s.authHandler.VerifyOTP).Methods(http.MethodPost)
 	api.HandleFunc("/auth/refresh", s.authHandler.RefreshToken).Methods(http.MethodPost)
+	api.HandleFunc("/auth/logout", s.authHandler.Logout).Methods(http.MethodPost)
 
 	// Protected routes
 	protected := api.PathPrefix("").Subrouter()
@@ -31,7 +32,7 @@ func (s *Server) setupRoutes() {
 	protected.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
 
 	// Auth routes
-	protected.HandleFunc("/auth/token", s.authHandler.CreateAuthToken).Methods(http.MethodGet)
+	//protected.HandleFunc("/auth/token", s.authHandler.CreateAuthToken).Methods(http.MethodPost)
 
 	// User profile routes
 	protected.HandleFunc("/user/profile", s.userHandler.GetProfile).Methods(http.MethodGet)

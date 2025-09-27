@@ -17,6 +17,6 @@ func NewSaveRefreshTokenUseCase(authRepo repositories.AuthRepository) *SaveRefre
 	return &SaveRefreshTokenUseCase{authRepo: authRepo}
 }
 
-func (uc *SaveRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error{
-    return uc.authRepo.SaveRefreshToken(ctx, userID, token, expiresAt)
+func (uc *SaveRefreshTokenUseCase) Execute(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID, token string, expiresAt time.Time) error{
+    return uc.authRepo.SaveRefreshToken(ctx, userID, deviceID, token, expiresAt)
 }

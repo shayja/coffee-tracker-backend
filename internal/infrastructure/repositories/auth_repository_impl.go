@@ -47,34 +47,34 @@ import (
 		return err
 	}
 
-	func (r *AuthRepositoryImpl) SaveRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+	func (r *AuthRepositoryImpl) SaveRefreshToken(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID, token string, expiresAt time.Time) error {
 		query := `
-			INSERT INTO user_refresh_tokens (user_id, token, expires_at)
-			VALUES ($1, $2, $3)
-			ON CONFLICT (user_id) 
+			INSERT INTO user_refresh_tokens (user_id, device_id, token, expires_at)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (user_id, device_id) 
 			DO UPDATE SET 
 				token = EXCLUDED.token, 
 				expires_at = EXCLUDED.expires_at,
 				updated_at = NOW()
 		`
-		_, err := r.db.ExecContext(ctx, query, userID, token, expiresAt)
+		_, err := r.db.ExecContext(ctx, query, userID, deviceID, token, expiresAt)
 		return err
 	}
 
-	func (r *AuthRepositoryImpl) GetRefreshToken(ctx context.Context, userID uuid.UUID) (string, time.Time, error) {
+	func (r *AuthRepositoryImpl) GetRefreshToken(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID) (string, time.Time, error) {
 		var token string
 		var expiresAt time.Time
-		query := `SELECT token, expires_at FROM user_refresh_tokens WHERE user_id = $1 AND expires_at > NOW()`
-		err := r.db.QueryRowContext(ctx, query, userID).Scan(&token, &expiresAt)
+		query := `SELECT token, expires_at FROM user_refresh_tokens WHERE user_id = $1 AND device_id=$2 AND expires_at > NOW()`
+		err := r.db.QueryRowContext(ctx, query, userID, deviceID).Scan(&token, &expiresAt)
 		if err != nil {
 			return "", time.Time{}, err
 		}
 		return token, expiresAt, nil
 	}
 
-	func (r *AuthRepositoryImpl) DeleteRefreshToken(ctx context.Context, userID uuid.UUID) error {
-		query := `DELETE FROM user_refresh_tokens WHERE user_id = $1`
-		_, err := r.db.ExecContext(ctx, query, userID)
+	func (r *AuthRepositoryImpl) DeleteRefreshToken(ctx context.Context, userID uuid.UUID, deviceID uuid.UUID) error {
+		query := `DELETE FROM user_refresh_tokens WHERE user_id = $1 AND device_id=$2`
+		_, err := r.db.ExecContext(ctx, query, userID, deviceID)
 		return err
 	}
 
