@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"coffee-tracker-backend/internal/infrastructure/auth"
@@ -20,19 +18,18 @@ import (
 
 // Server encapsulates the HTTP server and its dependencies
 type Server struct {
-	config            	*config.Config
-	router            	*mux.Router
-	httpServer        	*http.Server
-	logger            	*log.Logger
-	userHandler 	  	*handlers.UserHandler
-	genericKvHandler	*handlers.GenericKVHandler
-	coffeeHandler     	*handlers.CoffeeEntryHandler
+	config              *config.Config
+	router              *mux.Router
+	httpServer          *http.Server
+	logger              *log.Logger
+	userHandler         *handlers.UserHandler
+	genericKvHandler    *handlers.GenericKVHandler
+	coffeeHandler       *handlers.CoffeeEntryHandler
 	userSettingsHandler *handlers.UserSettingsHandler
-	healthHandler     	*handlers.HealthHandler
-	authHandler       	*handlers.AuthHandler
-	jwtService        	*auth.JWTService
-	userRepo          	repositories.UserRepository
-	//db                *database.Supabase // Added to manage DB connection
+	healthHandler       *handlers.HealthHandler
+	authHandler         *handlers.AuthHandler
+	jwtService          *auth.JWTService
+	userRepo            repositories.UserRepository
 }
 
 // NewServer initializes a new Server instance with all dependencies
@@ -42,12 +39,10 @@ func NewServer() (*Server, error) {
 
 	// Load configuration
 	cfg := config.Load()
-	// Validate required environment variables
-	if cfg.DatabaseURL == "" {
-		log.Fatal("DATABASE_URL is required")
+	if err := cfg.Validate(); err != nil {
+		logger.Fatalf("❌ Invalid configuration: %v", err)
 	}
 
-	// Initialize server
 	server := &Server{
 		config: cfg,
 		router: mux.NewRouter(),
@@ -58,6 +53,7 @@ func NewServer() (*Server, error) {
 	if err := server.initializeDependencies(); err != nil {
 		return nil, err
 	}
+
 	server.setupRoutes()
 
 	// Configure HTTP server
@@ -72,58 +68,29 @@ func NewServer() (*Server, error) {
 	return server, nil
 }
 
-// Start runs the HTTP server with graceful shutdown
+// Start runs the HTTP server (blocking)
 func (s *Server) Start() error {
-	// Log server information
 	s.logServerInfo()
-
-	// Create a channel to listen for OS signals
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	// Start server in a goroutine
-	go func() {
-		s.logger.Printf("Starting server on port %s", s.config.Port)
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.logger.Fatalf("Server failed to start: %v", err)
-		}
-	}()
-
-	// Wait for shutdown signal
-	<-stop
-	s.logger.Println("Received shutdown signal. Initiating graceful shutdown...")
-
-	// Create a context with timeout for shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Close database connection
-	// if err := s.db.Close(); err != nil {
-	// 	s.logger.Printf("Error closing database connection: %v", err)
-	// }
-
-	// Attempt graceful shutdown
-	if err := s.httpServer.Shutdown(ctx); err != nil {
-		s.logger.Printf("Server shutdown error: %v", err)
-		return err
-	}
-
-	s.logger.Println("Server gracefully stopped")
-	return nil
+	s.logger.Printf("🚀 Starting server on port %s", s.config.Port)
+	return s.httpServer.ListenAndServe()
 }
 
-// logServerInfo logs the server endpoints based on environment
+// Shutdown gracefully stops the server
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.logger.Println("🧹 Shutting down server...")
+	// Attempt graceful shutdown
+	return s.httpServer.Shutdown(ctx)
+}
+
+// logServerInfo logs environment-based URLs for debugging
 func (s *Server) logServerInfo() {
-	var healthURL, apiURL string
-	if os.Getenv("FLY_APP_NAME") != "" {
-		appName := os.Getenv("FLY_APP_NAME")
-		healthURL = "https://" + appName + ".fly.dev/health"
-		apiURL = "https://" + appName + ".fly.dev/api/v1/*"
+	var baseURL string
+	if appName := os.Getenv("FLY_APP_NAME"); appName != "" {
+		baseURL = "https://" + appName + ".fly.dev"
 	} else {
-		healthURL = "http://localhost:" + s.config.Port + "/health"
-		apiURL = "http://localhost:" + s.config.Port + "/api/v1/*"
+		baseURL = "http://localhost:" + s.config.Port
 	}
-	s.logger.Printf("🚀 Coffee Tracker API starting...")
-	s.logger.Printf("📊 Health check: %s", healthURL)
-	s.logger.Printf("☕ API endpoints: %s", apiURL)
+	s.logger.Printf("🌍 Environment: %s", s.config.Env)
+	s.logger.Printf("📊 Health check: %s/health", baseURL)
+	s.logger.Printf("☕ API base: %s/api/v1/*", baseURL)
 }

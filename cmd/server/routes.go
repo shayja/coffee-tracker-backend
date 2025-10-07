@@ -1,4 +1,3 @@
-// file: cmd/server/routes.go
 package main
 
 import (
@@ -6,53 +5,86 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/infrastructure/http/middleware"
+
+	"github.com/gorilla/mux"
 )
 
-// setupRoutes configures the API routes with middleware
+// Route prefixes — keep them centralized to avoid typos and simplify maintenance
+const (
+	apiPrefix       = "/api/v1"
+	authPrefix      = apiPrefix + "/auth"
+	userPrefix      = apiPrefix + "/user"
+	entriesPrefix   = apiPrefix + "/entries"
+	settingsPrefix  = apiPrefix + "/settings"
+	genericKVPrefix = apiPrefix + "/kv"
+	statsPrefix     = apiPrefix + "/stats"
+)
+
+// setupRoutes configures all routes and their middleware
 func (s *Server) setupRoutes() {
-	// Apply global CORS middleware
 	s.router.Use(middleware.CorsMiddleware)
+	s.registerHealthRoutes()
+	s.registerPublicRoutes()
+	s.registerProtectedRoutes()
 
-	// Health endpoint (no auth)
+	s.logger.Printf("Registered routes:")
+	s.router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+    t, _ := route.GetPathTemplate()
+		s.logger.Println("  -", t)
+    	return nil
+	})
+}
+
+// -----------------------------
+// 💚 Health Routes
+// -----------------------------
+func (s *Server) registerHealthRoutes() {
 	s.router.HandleFunc("/health", s.healthHandler.Health).Methods(http.MethodGet)
+}
 
-	// API v1 router
-	api := s.router.PathPrefix("/api/v1").Subrouter()
+// -----------------------------
+// 🌍 Public (unauthenticated) Routes
+// -----------------------------
+func (s *Server) registerPublicRoutes() {
+	api := s.router.NewRoute().Subrouter()
 	api.Use(middleware.RequestLogger)
 
-	// Public routes
-	api.HandleFunc("/auth/request-otp", s.authHandler.RequestOTP).Methods(http.MethodPost)
-	api.HandleFunc("/auth/verify-otp", s.authHandler.VerifyOTP).Methods(http.MethodPost)
-	api.HandleFunc("/auth/refresh", s.authHandler.RefreshToken).Methods(http.MethodPost)
-	api.HandleFunc("/auth/logout", s.authHandler.Logout).Methods(http.MethodPost)
-
-	// Protected routes
-	protected := api.PathPrefix("").Subrouter()
-	protected.Use(middleware.AuthMiddleware(s.jwtService))
-	protected.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
-
-	// Auth routes
-	//protected.HandleFunc("/auth/token", s.authHandler.CreateAuthToken).Methods(http.MethodPost)
-
-	// User profile routes
-	protected.HandleFunc("/user/profile", s.userHandler.GetProfile).Methods(http.MethodGet)
-	protected.HandleFunc("/user/profile", s.userHandler.UpdateProfile).Methods(http.MethodPatch)
-
-	// User avatar routes
-	protected.HandleFunc("/user/avatar", s.userHandler.UploadProfileImage).Methods(http.MethodPost)
-	protected.HandleFunc("/user/avatar", s.userHandler.DeleteProfileImage).Methods(http.MethodDelete)
-
-	protected.HandleFunc("/kv", s.genericKvHandler.Get).Methods(http.MethodGet)
-
-
-	// Coffee entry routes
-	protected.HandleFunc("/entries", s.coffeeHandler.GetEntries).Methods(http.MethodGet)
-	protected.HandleFunc("/entries", s.coffeeHandler.CreateEntry).Methods(http.MethodPost)
-	protected.HandleFunc("/entries/{id}", s.coffeeHandler.EditEntry).Methods(http.MethodPut)
-	protected.HandleFunc("/entries/{id}", s.coffeeHandler.DeleteEntry).Methods(http.MethodDelete)
-	protected.HandleFunc("/stats", s.coffeeHandler.GetStats).Methods(http.MethodGet)
-
-	// User settings routes
-	protected.HandleFunc("/settings", s.userSettingsHandler.GetAll).Methods(http.MethodGet)
-	protected.HandleFunc("/settings/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
+	api.HandleFunc(authPrefix+"/request-otp", s.authHandler.RequestOTP).Methods(http.MethodPost)
+	api.HandleFunc(authPrefix+"/verify-otp", s.authHandler.VerifyOTP).Methods(http.MethodPost)
+	api.HandleFunc(authPrefix+"/logout", s.authHandler.Logout).Methods(http.MethodPost)
 }
+
+// -----------------------------
+// 🔒 Protected (authenticated) Routes
+// -----------------------------
+func (s *Server) registerProtectedRoutes() {
+	api := s.router.NewRoute().Subrouter()
+	api.Use(middleware.AuthMiddleware(s.jwtService))
+	api.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
+
+	// --- Auth routes ---
+	api.HandleFunc(authPrefix+"/refresh", s.authHandler.RefreshToken).Methods(http.MethodPost)
+
+	// --- User routes ---
+	api.HandleFunc(userPrefix+"/profile", s.userHandler.GetProfile).Methods(http.MethodGet)
+	api.HandleFunc(userPrefix+"/profile", s.userHandler.UpdateProfile).Methods(http.MethodPatch)
+	api.HandleFunc(userPrefix+"/avatar", s.userHandler.UploadProfileImage).Methods(http.MethodPost)
+	api.HandleFunc(userPrefix+"/avatar", s.userHandler.DeleteProfileImage).Methods(http.MethodDelete)
+
+	// --- Generic KV store ---
+	api.HandleFunc(genericKVPrefix, s.genericKvHandler.Get).Methods(http.MethodGet)
+
+	// --- Coffee entries ---
+	api.HandleFunc(entriesPrefix, s.coffeeHandler.GetEntries).Methods(http.MethodGet)
+	api.HandleFunc(entriesPrefix, s.coffeeHandler.CreateEntry).Methods(http.MethodPost)
+	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.EditEntry).Methods(http.MethodPut)
+	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.DeleteEntry).Methods(http.MethodDelete)
+
+	// --- Stats ---
+	api.HandleFunc(statsPrefix, s.coffeeHandler.GetStats).Methods(http.MethodGet)
+
+	// --- User settings ---
+	api.HandleFunc(settingsPrefix, s.userSettingsHandler.GetAll).Methods(http.MethodGet)
+	api.HandleFunc(settingsPrefix+"/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
+}
+
