@@ -5,6 +5,7 @@ import (
 	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"log"
@@ -141,13 +142,26 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var req dto.RefreshTokenRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" ||  req.DeviceID == uuid.Nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
 		http.Error(w, "Missing arguments", http.StatusBadRequest)
 		return
 	}
 
+	tokenString, err := utils.ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, "No refresh token found", http.StatusUnauthorized)
+		return
+	}
+	
+	// Extract claims to verify it's a refresh token
+	userID, err := h.jwtService.ExtractUserIDFromToken(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+		return
+	}
+
 	// Validate refresh token
-	claims, err := h.jwtService.ValidateToken(req.RefreshToken)
+	claims, err := h.jwtService.ValidateTokenString(tokenString)
 	if err != nil {
 		http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
 		return
@@ -159,13 +173,6 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract user ID
-	userID, err := h.jwtService.ExtractUserIDFromToken(req.RefreshToken)
-	if err != nil {
-		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-		return
-	}
-
 	// Verify refresh token exists in database and matches
 	storedToken, expiresAt, err := h.getRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID)
 	if err != nil {
@@ -173,8 +180,8 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if storedToken != req.RefreshToken {
-		log.Printf("Refresh token mismatch for user %s: expected %s, got %s", userID, storedToken, req.RefreshToken)
+	if storedToken != tokenString {
+		log.Printf("Refresh token mismatch for user %s: expected %s, got %s", userID, storedToken, tokenString)
 		http.Error(w, "Refresh token mismatch", http.StatusUnauthorized)
 		return
 	}

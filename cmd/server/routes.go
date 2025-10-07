@@ -28,7 +28,7 @@ func (s *Server) setupRoutes() {
 
 	// Protected routes
 	protected := api.PathPrefix("").Subrouter()
-	protected.Use(middleware.AuthMiddleware(s.config.JWTSecret))
+	protected.Use(middleware.AuthMiddleware(s.jwtService))
 	protected.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
 
 	// Auth routes

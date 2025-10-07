@@ -19,7 +19,6 @@ type DeleteTokenRequest struct {
 }
 
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
 	DeviceID	uuid.UUID  `json:"device_id"`
 }
 
