@@ -6,20 +6,28 @@ import (
 	"time"
 )
 
+type OtpStrength string
+
+const (
+	OTP_EASY   OtpStrength = "easy"
+	OTP_STRONG OtpStrength = "strong"
+)
+
 type Config struct {
-	Env                 string
-	Port                string
-	DatabaseURL         string
-	JWTSecret           string
-	MagicOtp            string
-	StorageURL          string
-	ServiceRoleKey      string
-	ProfileImageBucket  string
-	AccessTokenTTL      time.Duration
-	RefreshTokenTTL     time.Duration
+	Env            string
+	Port           string
+	DatabaseURL    string
+	JWTSecret      string
+	OtpStrength    OtpStrength
+	MagicOtp       string
+	StorageURL     string
+	ServiceRoleKey string
+	ProfileImageBucket string
+	AccessTokenTTL time.Duration
+	RefreshTokenTTL time.Duration
 }
 
-func Load() *Config {
+func Load() (*Config, error) {
 	accessTTL := 15 * time.Minute
 	refreshTTL := 7 * 24 * time.Hour
 
@@ -34,11 +42,12 @@ func Load() *Config {
 		}
 	}
 
-	return &Config{
+	cfg := &Config{
 		Env:                getEnv("ENV", "dev"),
 		Port:               getEnv("PORT", "8080"),
 		DatabaseURL:        getEnv("DATABASE_URL", ""),
 		JWTSecret:          getEnv("JWT_SECRET", ""),
+		OtpStrength:        OtpStrength(getEnv("OTP_STRENGTH", "easy")), // cast to OtpStrength
 		MagicOtp:           getEnv("MAGIC_OTP", ""),
 		StorageURL:         getEnv("SUPABASE_STORAGE_URL", ""),
 		ServiceRoleKey:     getEnv("SUPABASE_SERVICE_KEY_ID", ""),
@@ -46,16 +55,21 @@ func Load() *Config {
 		AccessTokenTTL:     accessTTL,
 		RefreshTokenTTL:    refreshTTL,
 	}
-}
 
-func (c *Config) Validate() error {
-	if c.DatabaseURL == "" {
-		return errors.New("DATABASE_URL is required")
+	// Validate immediately
+	if err := cfg.validate(); err != nil {
+		return nil, err
 	}
-	if c.JWTSecret == "" {
-		return errors.New("JWT_SECRET is required")
+
+	// Validate OTP strength
+	switch cfg.OtpStrength {
+	case OTP_EASY, OTP_STRONG:
+		// ok
+	default:
+		return nil, errors.New("invalid OTP_STRENGTH, must be 'easy' or 'strong'")
 	}
-	return nil
+
+	return cfg, nil
 }
 
 func getEnv(key, defaultValue string) string {
@@ -63,4 +77,14 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func (c *Config) validate() error {
+	if c.DatabaseURL == "" {
+		return errors.New("DATABASE_URL is required")
+	}
+	if c.JWTSecret == "" {
+		return errors.New("JWT_SECRET is required")
+	}
+	return nil
 }

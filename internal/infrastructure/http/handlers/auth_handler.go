@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/auth"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
 	"coffee-tracker-backend/internal/infrastructure/utils"
@@ -127,8 +126,11 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 
 	// Return response
 	response := dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		TokenPair: dto.TokenPair{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+		
 		User: dto.LoggedInUserResponse{
 			ID:     user.ID,
 			Name:   user.Name,
@@ -214,8 +216,10 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	// Return new tokens
 	response := dto.RefreshTokenResponse{
-		AccessToken:  newAccessToken,
-		RefreshToken: newRefreshToken,
+		TokenPair: dto.TokenPair{
+			AccessToken:  newAccessToken,
+			RefreshToken: newRefreshToken,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -223,11 +227,9 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
+	
 	var req dto.DeleteTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil  || req.DeviceID == uuid.Nil{
 		http.Error(w, "Invalid or missing device_id", http.StatusBadRequest)
@@ -246,11 +248,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 /*
 func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from context
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	var req dto.CreateTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil ||  req.DeviceID == uuid.Nil {
@@ -293,11 +292,8 @@ func (h *AuthHandler) CreateAuthToken(w http.ResponseWriter, r *http.Request) {
 */
 // Optional: Get current user profile
 func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	user, err := h.getUserByIDUC.Execute(r.Context(), userID)
 	if err != nil {

@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 )
@@ -46,11 +45,8 @@ func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Extract user ID from context (set by auth middleware)
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	entry, err := h.createCoffeeUC.Execute(r.Context(), req, userID)
 	if err != nil {
@@ -85,11 +81,8 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract user ID from context (set by auth middleware)
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	// Get entry ID from path parameter
 	entryID, err := utils.GetEntryIDByRoute(r, w)
@@ -114,12 +107,8 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	dateStr := r.URL.Query().Get("date")
 	tzOffsetStr := r.URL.Query().Get("tzOffset")
@@ -149,11 +138,8 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 
 func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from context
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	// Get entry ID from path parameter
 	entryID, err := utils.GetEntryIDByRoute(r, w)
@@ -177,11 +163,8 @@ func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CoffeeEntryHandler) GetStats(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	stats, err := h.getStatsUseCase.Execute(r.Context(), userID)
 	if err != nil {

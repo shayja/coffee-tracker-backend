@@ -9,6 +9,7 @@ import (
 
 	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -22,11 +23,8 @@ func UserMiddleware(repo repositories.UserRepository, ttl time.Duration) func(ht
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userID, ok := contextkeys.UserIDFromContext(r.Context())
-			if !ok {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
+			userID, ok := utils.GetUserIDOrAbort(w, r)
+			if !ok { return }
 
 			var user *entities.User
 

@@ -38,8 +38,8 @@ func NewServer() (*Server, error) {
 	logger := log.New(os.Stdout, "coffee-tracker: ", log.LstdFlags|log.Lshortfile)
 
 	// Load configuration
-	cfg := config.Load()
-	if err := cfg.Validate(); err != nil {
+	cfg, err := config.Load() // already validated
+	if err != nil {
 		logger.Fatalf("❌ Invalid configuration: %v", err)
 	}
 

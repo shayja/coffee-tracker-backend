@@ -3,7 +3,6 @@ package usecases
 
 import (
 	"context"
-	"time"
 
 	"coffee-tracker-backend/internal/repositories"
 
@@ -19,5 +18,5 @@ func NewDeleteUserProfileImageUseCase(userRepo repositories.UserRepository) *Del
 }
 
 func (uc *DeleteUserProfileImageUseCase) Execute(ctx context.Context, userID uuid.UUID) error {
-	return uc.userRepo.DeleteProfileImage(ctx, userID, time.Now().UTC())
+	return uc.userRepo.DeleteProfileImage(ctx, userID)
 }

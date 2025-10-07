@@ -48,8 +48,8 @@ func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffe
 		Latitude:   req.Latitude,
     	Longitude:  req.Longitude,
 		Timestamp: req.Timestamp,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		CreatedAt:  time.Now().UTC(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 
 	if err := uc.coffeeRepo.Create(ctx, entry); err != nil {

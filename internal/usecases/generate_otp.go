@@ -2,10 +2,10 @@
 package usecases
 
 import (
+	"coffee-tracker-backend/internal/infrastructure/config"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 	"context"
-	"crypto/rand"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,28 +13,30 @@ import (
 
 type GenerateOtpUseCase struct {
 	authRepo repositories.AuthRepository
+	config  *config.Config
 }
 
-func NewGenerateOtpUseCase(authRepo repositories.AuthRepository) *GenerateOtpUseCase {
-	return &GenerateOtpUseCase{authRepo: authRepo}
+func NewGenerateOtpUseCase(authRepo repositories.AuthRepository, config  *config.Config) *GenerateOtpUseCase {
+	return &GenerateOtpUseCase{authRepo: authRepo, config: config }
 }
 
 func (uc *GenerateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID) (string, error) {
-	otp := fmt.Sprintf("%06d", randInt(100000, 999999)) // 6-digit code
-	expiresAt := time.Now().Add(5 * time.Minute)
+	// generate random N-digit OTP
+	strength := config.OtpStrength(uc.config.OtpStrength) // cast string → OtpStrength
+	otp, err := utils.GenerateOTP(strength)
+	if err != nil {
+		return "", err
+	}
 
-	err := uc.authRepo.SaveOTP(ctx, userID, otp, expiresAt)
+	// OTP valid for N minutes
+	expiresAt := time.Now().Add(5 * time.Minute).UTC()
+
+	// save OTP to DB
+	err = uc.authRepo.SaveOTP(ctx, userID, otp, expiresAt)
 	if err != nil {
 		return "", err
 	}
 
 	// TODO: send OTP via email/SMS (integration needed)
 	return otp, nil
-}
-
-// helper for random int
-func randInt(min, max int) int {
-	b := make([]byte, 1)
-	rand.Read(b)
-	return min + int(b[0])%(max-min+1)
 }

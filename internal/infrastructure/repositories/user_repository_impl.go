@@ -4,7 +4,9 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"coffee-tracker-backend/internal/entities"
@@ -23,12 +25,12 @@ func NewUserRepositoryImpl(db *sql.DB) repositories.UserRepository {
 	return &UserRepositoryImpl{db: db}
 }
 
+// Create inserts a new user
 func (r *UserRepositoryImpl) Create(ctx context.Context, user *entities.User) error {
 	query := `
 		INSERT INTO users (id, email, mobile, name, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		utils.SafeToLower(user.Email),
@@ -37,106 +39,80 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user *entities.User) er
 		user.CreatedAt,
 		user.UpdatedAt,
 	)
-	
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+	return nil
 }
 
+// getUserByField is a helper for fetching users by any field
+func (r *UserRepositoryImpl) getUserByField(ctx context.Context, field string, value interface{}) (*entities.User, error) {
+	query := fmt.Sprintf(`
+		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
+		FROM users
+		WHERE %s = $1
+	`, field)
+
+	var user entities.User
+	err := r.db.QueryRowContext(ctx, query, value).Scan(
+		&user.ID, &user.Email, &user.Mobile, &user.Name,
+		&user.AvatarURL, &user.StatusID, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("user not found by %s=%v: %w", field, value, err)
+	}
+	return &user, nil
+}
+
+// GetByID fetches a user by ID
 func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*entities.User, error) {
-	query := `
-		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
-		FROM users
-		WHERE id = $1
-	`
-	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Mobile,
-		&user.Name,
-		&user.AvatarURL,
-		&user.StatusID,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return r.getUserByField(ctx, "id", id)
 }
 
+// GetByEmail fetches a user by email
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
-	query := `
-		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
-		FROM users
-		WHERE email = $1
-	`
-	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, email).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Mobile,
-		&user.Name,
-		&user.AvatarURL,
-		&user.StatusID,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return r.getUserByField(ctx, "email", email)
 }
 
+// GetByMobile fetches a user by mobile
 func (r *UserRepositoryImpl) GetByMobile(ctx context.Context, mobile string) (*entities.User, error) {
-	query := `
-		SELECT id, email, mobile, name, COALESCE(avatar_url, '') AS avatar_url, status_id, created_at, updated_at
-		FROM users
-		WHERE mobile = $1
-	`
-	var user entities.User
-	err := r.db.QueryRowContext(ctx, query, mobile).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Mobile,
-		&user.Name,
-		&user.AvatarURL,
-		&user.StatusID,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return r.getUserByField(ctx, "mobile", mobile)
 }
 
-
+// Update updates user's email, mobile, name
 func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
+	now := time.Now().UTC()
 	query := `
 		UPDATE users 
-		SET email = $2, mobile= $3, name = $4, updated_at = $5
+		SET email = $2, mobile = $3, name = $4, updated_at = $5
 		WHERE id = $1
 	`
-	
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID,
 		utils.SafeToLower(user.Email),
 		utils.NullIfEmpty(user.Mobile),
 		utils.NullIfEmpty(user.Name),
-		user.UpdatedAt,
+		now,
 	)
-	
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update user %s: %w", user.ID, err)
+	}
+	return nil
 }
 
+// Delete removes a user by ID
 func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete user %s: %w", id, err)
+	}
+	return nil
 }
 
-// UpdateProfile updates the user's profile fields (name, avatar_url).
+// UpdateProfile updates user profile fields based on request DTO
 func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID, req *dto.UpdateUserProfileRequest) error {
+	now := time.Now().UTC()
 	query := `UPDATE users SET `
 	params := []interface{}{}
 	i := 1
@@ -167,27 +143,38 @@ func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID
 	// 	i++
 	// }
 
+	// Remove trailing comma
+	query = strings.TrimSuffix(query, ", ")
 	// Always update updated_at
-	query += `updated_at = NOW() WHERE id = $` + strconv.Itoa(i)
-	params = append(params, userID)
+	query = strings.TrimSuffix(query, ", ")
+	query += `, updated_at = $` + strconv.Itoa(i) + ` WHERE id = $` + strconv.Itoa(i+1)
+	params = append(params, now, userID)
 
 	_, err := r.db.ExecContext(ctx, query, params...)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update profile for user %s: %w", userID, err)
+	}
+	return nil
 }
 
-func (r *UserRepositoryImpl) UpdateAProfileImage(ctx context.Context, user *entities.User) error {
-    query := `UPDATE users SET avatar_url = $1, updated_at = $2 WHERE id = $3`
-    _, err := r.db.ExecContext(ctx, query, user.AvatarURL, user.UpdatedAt, user.ID)
-    return err
+// UpdateProfileImage updates user's avatar_url
+func (r *UserRepositoryImpl) UpdateProfileImage(ctx context.Context, user *entities.User) error {
+	now := time.Now().UTC()
+	query := `UPDATE users SET avatar_url = $1, updated_at = $3 WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, user.AvatarURL, user.ID, now)
+	if err != nil {
+		return fmt.Errorf("failed to update profile image for user %s: %w", user.ID, err)
+	}
+	return nil
 }
 
-
-func (r *UserRepositoryImpl) DeleteProfileImage(ctx context.Context, userID uuid.UUID, updatedAt time.Time) error {
-	query := `
-		UPDATE users
-		SET avatar_url = NULL, updated_at = $2
-		WHERE id = $1
-	`
-	_, err := r.db.ExecContext(ctx, query, userID, updatedAt)
-	return err
+// DeleteProfileImage sets user's avatar_url to NULL
+func (r *UserRepositoryImpl) DeleteProfileImage(ctx context.Context, userID uuid.UUID) error {
+	now := time.Now().UTC()
+	query := `UPDATE users SET avatar_url = NULL, updated_at = $2 WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, userID, now)
+	if err != nil {
+		return fmt.Errorf("failed to delete profile image for user %s: %w", userID, err)
+	}
+	return nil
 }

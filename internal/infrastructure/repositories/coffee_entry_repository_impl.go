@@ -53,7 +53,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 		entry.Timestamp,
 		entry.CoffeeTypeID,
 		entry.SizeID,
-		time.Now(),
+		time.Now().UTC(),
 	)
 	
 	return err
@@ -175,20 +175,21 @@ func (r *CoffeeEntryRepositoryImpl) Delete(ctx context.Context, id uuid.UUID, us
 }
 
 func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UUID) (*entities.CoffeeStats, error) {
+	now:= time.Now().UTC()
 	query := `
 		SELECT 
 			COUNT(*) as total_entries,
 			--COALESCE(SUM(caffeine_mg), 0) as total_caffeine,
 			--COALESCE(AVG(rating), 0) as average_rating,
 			--COALESCE(SUM(price), 0) as total_spent,
-			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '7 days') as entries_this_week,
-			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '30 days') as entries_this_month
+			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= $2 - INTERVAL '7 days') as entries_this_week,
+			(SELECT COUNT(*) FROM coffee_entries WHERE user_id = $1 AND timestamp >= $2 - INTERVAL '30 days') as entries_this_month
 		FROM coffee_entries 
 		WHERE user_id = $1
 	`
 	
 	var stats entities.CoffeeStats
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID, now).Scan(
 		&stats.TotalEntries,
 		// &stats.TotalCaffeine,
 		// &stats.AverageRating,

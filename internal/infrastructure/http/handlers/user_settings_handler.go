@@ -2,8 +2,8 @@
 package handlers
 
 import (
-	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"net/http"
@@ -23,11 +23,8 @@ func NewUserSettingsHandler(getAllUC *usecases.GetUserSettingsUseCase, updateUC 
 
 // GET /users/settings
 func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	settings, err := h.getAllUC.Execute(r.Context(), userID)
 	if err != nil {
@@ -43,11 +40,8 @@ func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 // PATCH /settings/:key
 func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	var body struct {
 		Key   int         `json:"key"`   // enum number

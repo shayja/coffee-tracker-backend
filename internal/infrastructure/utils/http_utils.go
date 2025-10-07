@@ -2,6 +2,7 @@
 package utils
 
 import (
+	"coffee-tracker-backend/internal/contextkeys"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -22,4 +23,11 @@ func GetEntryIDByRoute(r *http.Request, w http.ResponseWriter) (uuid.UUID, error
 		return uuid.UUID{}, nil
 	}
 	return entryID, err
+}
+func GetUserIDOrAbort(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
+    userID, ok := contextkeys.UserIDFromContext(r.Context())
+    if !ok {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+    }
+    return userID, ok
 }

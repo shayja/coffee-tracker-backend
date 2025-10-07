@@ -47,7 +47,7 @@ func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uui
         AvatarURL: url,
         UpdatedAt: time.Now().UTC(),
     }
-    if err := uc.userRepo.UpdateAProfileImage(ctx, user); err != nil {
+    if err := uc.userRepo.UpdateProfileImage(ctx, user); err != nil {
         return "", err
     }
 

@@ -48,7 +48,7 @@ func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEnt
 		// Price:      req.Price,
 		// Rating:     req.Rating,
 		Timestamp: 		req.Timestamp,
-		UpdatedAt:  	time.Now(),
+		UpdatedAt:  	time.Now().UTC(),
 	}
 
 	if err := uc.coffeeRepo.Update(ctx, entry); err != nil {

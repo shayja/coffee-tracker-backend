@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"coffee-tracker-backend/internal/contextkeys"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 )
 
@@ -33,11 +33,8 @@ func NewUserHandler(
 
 // GET /profile
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	profile, err := h.getProfileUC.Execute(r.Context(), userID)
 	if err != nil {
@@ -51,11 +48,8 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 // PATCH /profile
 func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	var req dto.UpdateUserProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -80,11 +74,8 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 // POST /profile/image
 func (h *UserHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request) {
-    userID, ok := contextkeys.UserIDFromContext(r.Context())
-    if !ok {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
+    userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
     // Parse the multipart form
     err := r.ParseMultipartForm(5 << 20) // 5 MB max
@@ -117,11 +108,8 @@ func (h *UserHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request)
 
 // DELETE /profile/image
 func (h *UserHandler) DeleteProfileImage(w http.ResponseWriter, r *http.Request) {
-	userID, ok := contextkeys.UserIDFromContext(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	userID, ok := utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
 
 	err := h.deleteImageUC.Execute(r.Context(), userID)
 	if err != nil {

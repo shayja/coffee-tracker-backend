@@ -43,7 +43,7 @@ import (
 	getStatsUseCase := usecases.NewGetCoffeeStatsUseCase(coffeeRepo)
 	getUserByIDUC := usecases.NewGetUserByIDUseCase(userRepo)
 	getUserByMobileUC := usecases.NewGetUserByMobileUseCase(userRepo)
-	generateOtpUC := usecases.NewGenerateOtpUseCase(authRepo)
+	generateOtpUC := usecases.NewGenerateOtpUseCase(authRepo, s.config)
 	validateOtpUC := usecases.NewValidateOtpUseCase(authRepo, s.config)
 	saveRefreshTokenUC := usecases.NewSaveRefreshTokenUseCase(authRepo)
 	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)

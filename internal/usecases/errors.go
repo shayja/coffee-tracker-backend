@@ -12,4 +12,5 @@ var (
 	ErrInternalError       	= errors.New("internal error")
 	ErrNotFound           	= errors.New("not found")
 	ErrEntryAlreadyExists  	= errors.New("entry already exists")
+	ErrInvalidOTP 			= errors.New("invalid or expired OTP")
 )

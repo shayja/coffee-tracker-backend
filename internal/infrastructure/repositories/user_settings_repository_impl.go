@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -38,16 +39,16 @@ func (r *UserSettingsRepositoryImpl) Get(ctx context.Context, userID uuid.UUID) 
 
 // Patch updates one or more user settings dynamically
 func (r *UserSettingsRepositoryImpl) Patch(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error {
-	column := setting.ColumnName()
+	now:= time.Now().UTC()
+    column := setting.ColumnName()
 	if column == "" {
 		return fmt.Errorf("unknown setting: %d", setting)
 	}
 
-	query := fmt.Sprintf(`UPDATE user_settings SET %s = $1, updated_at = NOW() WHERE user_id = $2`, column)
-	_, err := r.db.ExecContext(ctx, query, value, userID)
+	query := fmt.Sprintf(`UPDATE user_settings SET %s = $1, updated_at = $3 WHERE user_id = $2`, column)
+	_, err := r.db.ExecContext(ctx, query, value, userID, now)
 	return err
 }
-
 
 // Reset sets a specific setting to its default (e.g. false)
 func (r *UserSettingsRepositoryImpl) Reset(ctx context.Context, userID uuid.UUID, setting entities.Setting) error {
@@ -55,8 +56,8 @@ func (r *UserSettingsRepositoryImpl) Reset(ctx context.Context, userID uuid.UUID
 	if column == "" {
 		return fmt.Errorf("unknown setting: %d", setting)
 	}
-
-    query := fmt.Sprintf(`UPDATE user_settings SET %s = false, updated_at = now() WHERE user_id = $1`, column)
-    _, err := r.db.ExecContext(ctx, query, userID)
+    now:= time.Now().UTC()
+    query := fmt.Sprintf(`UPDATE user_settings SET %s = false, updated_at = $2 WHERE user_id = $1`, column)
+    _, err := r.db.ExecContext(ctx, query, userID, now)
     return err
 }
