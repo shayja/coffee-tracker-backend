@@ -2,15 +2,14 @@
 package handlers
 
 import (
+	http_utils "coffee-tracker-backend/internal/infrastructure/http"
+	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"coffee-tracker-backend/internal/infrastructure/utils"
-	"coffee-tracker-backend/internal/usecases"
 )
 
 type CoffeeEntryHandler struct {
@@ -45,7 +44,7 @@ func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Extract user ID from context (set by auth middleware)
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	entry, err := h.createCoffeeUC.Execute(r.Context(), req, userID)
@@ -81,11 +80,11 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract user ID from context (set by auth middleware)
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	// Get entry ID from path parameter
-	entryID, err := utils.GetEntryIDByRoute(r, w)
+	entryID, err := http_utils.GetEntryIDByRoute(r, w)
 	if err != nil {
 		return
 	}
@@ -107,7 +106,7 @@ func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	dateStr := r.URL.Query().Get("date")
@@ -138,11 +137,11 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 
 func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from context
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	// Get entry ID from path parameter
-	entryID, err := utils.GetEntryIDByRoute(r, w)
+	entryID, err := http_utils.GetEntryIDByRoute(r, w)
 	if err != nil {
 		return
 	}
@@ -163,7 +162,7 @@ func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *CoffeeEntryHandler) GetStats(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	stats, err := h.getStatsUseCase.Execute(r.Context(), userID)

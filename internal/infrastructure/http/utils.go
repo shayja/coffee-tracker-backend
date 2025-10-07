@@ -3,11 +3,28 @@ package utils
 
 import (
 	"coffee-tracker-backend/internal/contextkeys"
+	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
+
+// WriteError writes a JSON-formatted error response with the given status and message.
+// Example:
+//   http_utils.WriteError(w, http.StatusBadRequest, "Invalid request")
+func WriteError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+// WriteJSON writes any Go value as a JSON response with status 200 (OK) by default.
+func WriteJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(data)
+}
 
 func GetEntryIDByRoute(r *http.Request, w http.ResponseWriter) (uuid.UUID, error) {
 	vars := mux.Vars(r)          // extract path variables

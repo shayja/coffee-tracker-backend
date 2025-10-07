@@ -3,7 +3,7 @@ package handlers
 
 import (
 	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/utils"
+	http_utils "coffee-tracker-backend/internal/infrastructure/http"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
 	"net/http"
@@ -23,7 +23,7 @@ func NewUserSettingsHandler(getAllUC *usecases.GetUserSettingsUseCase, updateUC 
 
 // GET /users/settings
 func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	settings, err := h.getAllUC.Execute(r.Context(), userID)
@@ -40,7 +40,7 @@ func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 // PATCH /settings/:key
 func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	var body struct {

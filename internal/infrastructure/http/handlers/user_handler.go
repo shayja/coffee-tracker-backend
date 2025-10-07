@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	http_utils "coffee-tracker-backend/internal/infrastructure/http"
 	"coffee-tracker-backend/internal/infrastructure/http/dto"
-	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 )
 
@@ -33,7 +33,7 @@ func NewUserHandler(
 
 // GET /profile
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	profile, err := h.getProfileUC.Execute(r.Context(), userID)
@@ -48,7 +48,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 // PATCH /profile
 func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	var req dto.UpdateUserProfileRequest
@@ -74,7 +74,7 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 // POST /profile/image
 func (h *UserHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request) {
-    userID, ok := utils.GetUserIDOrAbort(w, r)
+    userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
     // Parse the multipart form
@@ -108,7 +108,7 @@ func (h *UserHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request)
 
 // DELETE /profile/image
 func (h *UserHandler) DeleteProfileImage(w http.ResponseWriter, r *http.Request) {
-	userID, ok := utils.GetUserIDOrAbort(w, r)
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
 	err := h.deleteImageUC.Execute(r.Context(), userID)

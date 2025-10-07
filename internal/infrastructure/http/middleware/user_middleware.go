@@ -2,15 +2,14 @@
 package middleware
 
 import (
+	"coffee-tracker-backend/internal/contextkeys"
+	"coffee-tracker-backend/internal/entities"
+	http_utils "coffee-tracker-backend/internal/infrastructure/http"
+	"coffee-tracker-backend/internal/repositories"
 	"context"
 	"net/http"
 	"sync"
 	"time"
-
-	"coffee-tracker-backend/internal/contextkeys"
-	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/utils"
-	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
 )
@@ -23,7 +22,7 @@ func UserMiddleware(repo repositories.UserRepository, ttl time.Duration) func(ht
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userID, ok := utils.GetUserIDOrAbort(w, r)
+			userID, ok := http_utils.GetUserIDOrAbort(w, r)
 			if !ok { return }
 
 			var user *entities.User
