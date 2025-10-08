@@ -75,10 +75,10 @@ func (s *Server) registerProtectedRoutes() {
 	api.HandleFunc(genericKVPrefix, s.genericKvHandler.Get).Methods(http.MethodGet)
 
 	// --- Coffee entries ---
-	api.HandleFunc(entriesPrefix, s.coffeeHandler.GetEntries).Methods(http.MethodGet)
-	api.HandleFunc(entriesPrefix, s.coffeeHandler.CreateEntry).Methods(http.MethodPost)
-	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.EditEntry).Methods(http.MethodPut)
-	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.DeleteEntry).Methods(http.MethodDelete)
+	api.HandleFunc(entriesPrefix, s.coffeeHandler.GetAll).Methods(http.MethodGet)
+	api.HandleFunc(entriesPrefix, s.coffeeHandler.Create).Methods(http.MethodPost)
+	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.Update).Methods(http.MethodPut)
+	api.HandleFunc(entriesPrefix+"/{id}", s.coffeeHandler.Delete).Methods(http.MethodDelete)
 
 	// --- Stats ---
 	api.HandleFunc(statsPrefix, s.coffeeHandler.GetStats).Methods(http.MethodGet)

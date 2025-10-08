@@ -174,6 +174,13 @@ func (r *CoffeeEntryRepositoryImpl) Delete(ctx context.Context, id uuid.UUID, us
 	return err
 }
 
+func (r *CoffeeEntryRepositoryImpl) DeleteAll(ctx context.Context, userID uuid.UUID) error {
+	query := `DELETE FROM coffee_entries WHERE user_id = $1`
+	_, err := r.db.ExecContext(ctx, query, userID)
+	return err
+}
+
+
 func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UUID) (*entities.CoffeeStats, error) {
 	now:= time.Now().UTC()
 	query := `

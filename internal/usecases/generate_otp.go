@@ -3,9 +3,11 @@ package usecases
 
 import (
 	"coffee-tracker-backend/internal/infrastructure/config"
+	"coffee-tracker-backend/internal/infrastructure/notifications"
 	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,18 +16,19 @@ import (
 type GenerateOtpUseCase struct {
 	authRepo repositories.AuthRepository
 	config  *config.Config
+	smsService notifications.SMSService
 }
 
-func NewGenerateOtpUseCase(authRepo repositories.AuthRepository, config  *config.Config) *GenerateOtpUseCase {
-	return &GenerateOtpUseCase{authRepo: authRepo, config: config }
+func NewGenerateOtpUseCase(authRepo repositories.AuthRepository, config  *config.Config, smsService notifications.SMSService) *GenerateOtpUseCase {
+	return &GenerateOtpUseCase{authRepo: authRepo, config: config, smsService: smsService }
 }
 
-func (uc *GenerateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID) (string, error) {
+func (uc *GenerateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID, mobile string) (error) {
 	// generate random N-digit OTP
 	strength := config.OtpStrength(uc.config.OtpStrength) // cast string → OtpStrength
 	otp, err := utils.GenerateOTP(strength)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// OTP valid for N minutes
@@ -34,9 +37,14 @@ func (uc *GenerateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID) (st
 	// save OTP to DB
 	err = uc.authRepo.SaveOTP(ctx, userID, otp, expiresAt)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	// TODO: send OTP via email/SMS (integration needed)
-	return otp, nil
+	// Send SMS here
+	if err := uc.smsService.SendOTP(userID, mobile, otp); err != nil {
+		return fmt.Errorf("failed to send OTP: %w", err)
+	}
+
+	
+	return nil
 }

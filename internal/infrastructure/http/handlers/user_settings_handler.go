@@ -10,11 +10,14 @@ import (
 )
 
 type UserSettingsHandler struct {
-	getAllUC   *usecases.GetUserSettingsUseCase
-	updateUC   *usecases.UpdateUserSettingUseCase
+	getAllUC *usecases.GetUserSettingsUseCase
+	updateUC *usecases.UpdateUserSettingUseCase
 }
 
-func NewUserSettingsHandler(getAllUC *usecases.GetUserSettingsUseCase, updateUC *usecases.UpdateUserSettingUseCase) *UserSettingsHandler {
+func NewUserSettingsHandler(
+	getAllUC *usecases.GetUserSettingsUseCase,
+	updateUC *usecases.UpdateUserSettingUseCase,
+) *UserSettingsHandler {
 	return &UserSettingsHandler{
 		getAllUC: getAllUC,
 		updateUC: updateUC,
@@ -24,16 +27,17 @@ func NewUserSettingsHandler(getAllUC *usecases.GetUserSettingsUseCase, updateUC 
 // GET /users/settings
 func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
-	if !ok { return }
-
-	settings, err := h.getAllUC.Execute(r.Context(), userID)
-	if err != nil {
-		http.Error(w, "Failed to load settings", http.StatusInternalServerError)
+	if !ok {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	settings, err := h.getAllUC.Execute(r.Context(), userID)
+	if err != nil {
+		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to load settings", err.Error())
+		return
+	}
+
+	http_utils.WriteJSON(w, http.StatusOK, map[string]any{
 		"settings": settings,
 	})
 }
@@ -41,26 +45,28 @@ func (h *UserSettingsHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // PATCH /settings/:key
 func (h *UserSettingsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
-	if !ok { return }
+	if !ok {
+		return
+	}
 
 	var body struct {
 		Key   int         `json:"key"`   // enum number
 		Value interface{} `json:"value"` // could be bool, string, int
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http_utils.WriteError(w, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	setting := entities.Setting(body.Key)
 	if !setting.IsValid() {
-		http.Error(w, "Invalid setting key", http.StatusBadRequest)
+		http_utils.WriteError(w, http.StatusBadRequest, "Invalid setting key")
 		return
 	}
 
 	if err := h.updateUC.Execute(r.Context(), userID, setting, body.Value); err != nil {
-		http.Error(w, "Failed to update setting", http.StatusInternalServerError)
+		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to update setting", err.Error())
 		return
 	}
 

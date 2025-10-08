@@ -1,4 +1,4 @@
-// file: internal/usecases/edit_coffee_entry.go
+// file: internal/usecases/update_coffee_entry.go
 package usecases
 
 import (
@@ -6,30 +6,23 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/infrastructure/http/dto"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
 )
 
-type EditCoffeeEntryUseCase struct {
+type UpdateCoffeeEntryUseCase struct {
 	coffeeRepo repositories.CoffeeEntryRepository
 }
 
-func NewEditCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) *EditCoffeeEntryUseCase {
-	return &EditCoffeeEntryUseCase{
+func NewUpdateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) *UpdateCoffeeEntryUseCase {
+	return &UpdateCoffeeEntryUseCase{
 		coffeeRepo: coffeeRepo,
 	}
 }
 
-type EditCoffeeEntryRequest struct {
-	ID        uuid.UUID `json:"id"`
-    Notes     *string   `json:"notes,omitempty"`
-    Timestamp time.Time `json:"timestamp"`
-	CoffeeType *int    	`json:"type,omitempty"`
-	Size *int    		`json:"size,omitempty"`
-}
-
-func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
+func (uc *UpdateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUID, entryID uuid.UUID, req *dto.UpdateCoffeeEntryRequest) (*entities.CoffeeEntry, error) {
 	// if req.CoffeeType == nil {
 	// 	return nil, ErrInvalidInput
 	// }
@@ -39,7 +32,7 @@ func (uc *EditCoffeeEntryUseCase) Execute(ctx context.Context, req EditCoffeeEnt
 	// }
 
 	entry := &entities.CoffeeEntry{
-		ID:         	req.ID,
+		ID:         	entryID,
 		UserID:     	userID,
 		CoffeeTypeID: 	req.CoffeeType,
 		SizeID:       	req.Size,

@@ -1,111 +1,65 @@
-// file: internal/infrastructure/http/handlers/coffee_entry_handler.go
 package handlers
 
 import (
-	http_utils "coffee-tracker-backend/internal/infrastructure/http"
-	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
-	"strings"
+
+	http_utils "coffee-tracker-backend/internal/infrastructure/http"
+	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/usecases"
 )
 
 type CoffeeEntryHandler struct {
-	createCoffeeUC    *usecases.CreateCoffeeEntryUseCase
-	editCoffeeUC      *usecases.EditCoffeeEntryUseCase
-	deleteCoffeeUC     *usecases.DeleteCoffeeEntryUseCase
-	listCoffeeUC *usecases.ListCoffeeEntriesUseCase
-	getStatsUseCase   *usecases.GetCoffeeStatsUseCase
+	createUC    *usecases.CreateCoffeeEntryUseCase
+	getAllUC    *usecases.GetCoffeeEntriesUseCase
+	updateUC    *usecases.UpdateCoffeeEntryUseCase
+	deleteUC    *usecases.DeleteCoffeeEntryUseCase
+	clearUC     *usecases.ClearCoffeeEntriesUseCase
+	getStatsUC  *usecases.GetCoffeeStatsUseCase
 }
 
 func NewCoffeeEntryHandler(
-	createCoffeeUC *usecases.CreateCoffeeEntryUseCase,
-	editCoffeeUC *usecases.EditCoffeeEntryUseCase,
-	deleteCoffeeUC *usecases.DeleteCoffeeEntryUseCase,
-	listCoffeeUC *usecases.ListCoffeeEntriesUseCase,
-	getStatsUseCase *usecases.GetCoffeeStatsUseCase,
+	createUC *usecases.CreateCoffeeEntryUseCase,
+	getAllUC *usecases.GetCoffeeEntriesUseCase,
+	updateUC *usecases.UpdateCoffeeEntryUseCase,
+	deleteUC *usecases.DeleteCoffeeEntryUseCase,
+	clearUC *usecases.ClearCoffeeEntriesUseCase,
+	getStatsUC *usecases.GetCoffeeStatsUseCase,
 ) *CoffeeEntryHandler {
 	return &CoffeeEntryHandler{
-		createCoffeeUC:     createCoffeeUC,
-		editCoffeeUC:       editCoffeeUC,
-		deleteCoffeeUC:     deleteCoffeeUC,
-		listCoffeeUC: listCoffeeUC,
-		getStatsUseCase:   getStatsUseCase,
+		createUC:   createUC,
+		getAllUC:   getAllUC,
+		updateUC:   updateUC,
+		deleteUC:   deleteUC,
+		clearUC:    clearUC,
+		getStatsUC: getStatsUC,
 	}
 }
 
-func (h *CoffeeEntryHandler) CreateEntry(w http.ResponseWriter, r *http.Request) {
-	var req usecases.CreateCoffeeEntryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	// Extract user ID from context (set by auth middleware)
+// POST /entries
+func (h *CoffeeEntryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
-	entry, err := h.createCoffeeUC.Execute(r.Context(), req, userID)
-	if err != nil {
-		switch err {
-		case usecases.ErrInvalidInput:
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		case usecases.ErrConflict:
-			http.Error(w, err.Error(), http.StatusConflict)
-		default:
-			// Log the error for debugging
-			log.Printf("CreateEntry error: %v", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		}
-		return
-	}
-
-	// Set Location header with URL to the newly created resource
-	location := fmt.Sprintf("%s/%s", strings.TrimSuffix(r.URL.Path, "/"), entry.ID.String())
-	w.Header().Set("Location", location)
-	
-	// Return 201 Created status
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(entry)
-}
-
-func (h *CoffeeEntryHandler) EditEntry(w http.ResponseWriter, r *http.Request) {
-	var req usecases.EditCoffeeEntryRequest
+	var req dto.CreateCoffeeEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http_utils.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// Extract user ID from context (set by auth middleware)
-	userID, ok := http_utils.GetUserIDOrAbort(w, r)
-	if !ok { return }
-
-	// Get entry ID from path parameter
-	entryID, err := http_utils.GetEntryIDByRoute(r, w)
+	entry, err := h.createUC.Execute(r.Context(), userID, &req)
 	if err != nil {
-		return
-	}
-	req.ID = entryID
-
-	entry, err := h.editCoffeeUC.Execute(r.Context(), req, userID)
-	if err != nil {
-		switch err {
-		case usecases.ErrInvalidInput:
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		default:
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		}
+		http_utils.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(entry)
+	http_utils.WriteJSON(w, http.StatusCreated, entry)
 }
 
-func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) {
+// GET /entries
+func (h *CoffeeEntryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
@@ -125,35 +79,67 @@ func (h *CoffeeEntryHandler) GetEntries(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	entries, err := h.listCoffeeUC.Execute(r.Context(), userID, &dateStr, tzOffset, limit, offset)
+	entries, err := h.getAllUC.Execute(r.Context(), userID, &dateStr, tzOffset, limit, offset)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to get entries")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(entries)
+	http_utils.WriteJSON(w, http.StatusOK, entries)
 }
 
-func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
-	// Extract user ID from context
+// PATCH /entries/{id}
+func (h *CoffeeEntryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
-	// Get entry ID from path parameter
-	entryID, err := http_utils.GetEntryIDByRoute(r, w)
+
+	entryID, err := http_utils.GetEntryIDByRouteOrAbort(r, w)
 	if err != nil {
+		http_utils.WriteError(w, http.StatusBadRequest, usecases.ErrInvalidInput.Error())
 		return
 	}
 
-	// Call use case to delete
-	err = h.deleteCoffeeUC.Execute(r.Context(), userID, entryID)
+	var req dto.UpdateCoffeeEntryRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http_utils.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	entry, err := h.updateUC.Execute(r.Context(), userID, entryID, &req)
 	if err != nil {
 		switch err {
 		case usecases.ErrNotFound:
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http_utils.WriteError(w, http.StatusNotFound, err.Error())
+		case usecases.ErrInvalidInput:
+			http_utils.WriteError(w, http.StatusBadRequest, err.Error())
 		default:
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			http_utils.WriteError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	http_utils.WriteJSON(w, http.StatusOK, entry)
+}
+
+// DELETE /entries/{id}
+func (h *CoffeeEntryHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
+
+	entryID, err := http_utils.GetEntryIDByRouteOrAbort(r, w)
+	if err != nil {
+		http_utils.WriteError(w, http.StatusBadRequest, usecases.ErrInvalidInput.Error())
+		return
+	}
+
+	err = h.deleteUC.Execute(r.Context(), userID, entryID)
+	if err != nil {
+		switch err {
+		case usecases.ErrNotFound:
+			http_utils.WriteError(w, http.StatusNotFound, err.Error())
+		default:
+			http_utils.WriteError(w, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
@@ -161,17 +147,30 @@ func (h *CoffeeEntryHandler) DeleteEntry(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// DELETE /entries
+func (h *CoffeeEntryHandler) ClearAll(w http.ResponseWriter, r *http.Request) {
+	userID, ok := http_utils.GetUserIDOrAbort(w, r)
+	if !ok { return }
+
+	err := h.clearUC.Execute(r.Context(), userID)
+	if err != nil {
+		http_utils.WriteError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /entries/stats
 func (h *CoffeeEntryHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
-	stats, err := h.getStatsUseCase.Execute(r.Context(), userID)
+	stats, err := h.getStatsUC.Execute(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to get stats")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	http_utils.WriteJSON(w, http.StatusOK, stats)
 }
-

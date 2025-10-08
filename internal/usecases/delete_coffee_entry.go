@@ -19,7 +19,7 @@ func NewDeleteCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 }
 
 // Execute deletes a coffee entry for a given user
-func (uc *DeleteCoffeeEntryUseCase) Execute(ctx context.Context, entryID, userID uuid.UUID) error {
+func (uc *DeleteCoffeeEntryUseCase) Execute(ctx context.Context, userID, entryID uuid.UUID) error {
 	err := uc.coffeeRepo.Delete(ctx, userID, entryID)
 	if err != nil {
 		if err.Error() == "no coffee entry found with id "+entryID.String()+" for this user" {

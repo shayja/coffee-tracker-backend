@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/infrastructure/http/dto"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -21,16 +22,7 @@ func NewCreateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 	}
 }
 
-type CreateCoffeeEntryRequest struct {
-    Notes     *string   `json:"notes,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
-	Latitude  *float64  `json:"latitude,omitempty"`
-    Longitude *float64  `json:"longitude,omitempty"`
-	CoffeeType *int    	`json:"type,omitempty"`
-	Size *int    		`json:"size,omitempty"`
-}
-
-func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, req CreateCoffeeEntryRequest, userID uuid.UUID) (*entities.CoffeeEntry, error) {
+func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUID, req *dto.CreateCoffeeEntryRequest) (*entities.CoffeeEntry, error) {
 
 	// if req.Rating < 1 || req.Rating > 5 {
 	// 	return nil, ErrInvalidInput

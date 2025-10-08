@@ -11,17 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type ListCoffeeEntriesUseCase struct {
+type GetCoffeeEntriesUseCase struct {
 	coffeeRepo repositories.CoffeeEntryRepository
 }
 
-func NewListCoffeeEntriesUseCase(coffeeRepo repositories.CoffeeEntryRepository) *ListCoffeeEntriesUseCase {
-	return &ListCoffeeEntriesUseCase{
+func NewGetCoffeeEntriesUseCase(coffeeRepo repositories.CoffeeEntryRepository) *GetCoffeeEntriesUseCase {
+	return &GetCoffeeEntriesUseCase{
 		coffeeRepo: coffeeRepo,
 	}
 }
 
-func (uc *ListCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, dateStr *string, tzOffsetMinutes *int, limit, offset int) ([]*entities.CoffeeEntry, error) {
+func (uc *GetCoffeeEntriesUseCase) Execute(ctx context.Context, userID uuid.UUID, dateStr *string, tzOffsetMinutes *int, limit, offset int) ([]*entities.CoffeeEntry, error) {
 	if limit <= 0 {
 		limit = 50 // default limit
 	}

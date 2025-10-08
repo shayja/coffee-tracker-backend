@@ -51,7 +51,10 @@ func NewAuthHandler(
 	}
 }
 
+// POST /auth/request-otp
 func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
+	http_utils.LogRequest(r)
+
 	var req dto.SendOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Mobile == "" {
 		http_utils.WriteError(w, http.StatusBadRequest, "Invalid request")
@@ -64,20 +67,20 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	otp, err := h.genereteOtpUC.Execute(r.Context(), user.ID)
+	err = h.genereteOtpUC.Execute(r.Context(), user.ID, req.Mobile)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate OTP")
 		return
 	}
-
-	log.Printf("Generated OTP for user %s: %s", user.ID, otp)
-
 	http_utils.WriteJSON(w, http.StatusOK, dto.SendOtpResponse{
 		Message: "OTP sent successfully",
 	})
 }
 
+// POST /auth/verify-otp
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
+	http_utils.LogRequest(r)
+
 	var req dto.VerifyOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http_utils.WriteError(w, http.StatusBadRequest, "Invalid request")
@@ -108,8 +111,6 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Generated refresh token for user %s: %s", user.ID, refreshToken)
-
 	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
 	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, req.DeviceID, refreshToken, refreshExpiry); err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
@@ -129,7 +130,10 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /auth/refresh
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	http_utils.LogRequest(r)
+
 	var req dto.RefreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
 		http_utils.WriteError(w, http.StatusBadRequest, "Missing arguments")
@@ -191,7 +195,10 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /auth/logout
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	http_utils.LogRequest(r)
+
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok {
 		return
@@ -211,7 +218,10 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http_utils.WriteJSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
 }
 
+// GET /auth/profile
 func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	http_utils.LogRequest(r)
+
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok {
 		return
