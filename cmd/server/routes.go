@@ -23,6 +23,7 @@ const (
 // setupRoutes configures all routes and their middleware
 func (s *Server) setupRoutes() {
 	s.router.Use(middleware.CorsMiddleware)
+	s.router.Use(middleware.RequestLogger) 
 	s.registerHealthRoutes()
 	s.registerPublicRoutes()
 	s.registerProtectedRoutes()
@@ -47,7 +48,6 @@ func (s *Server) registerHealthRoutes() {
 // -----------------------------
 func (s *Server) registerPublicRoutes() {
 	api := s.router.NewRoute().Subrouter()
-	api.Use(middleware.RequestLogger)
 
 	api.HandleFunc(authPrefix+"/request-otp", s.authHandler.RequestOTP).Methods(http.MethodPost)
 	api.HandleFunc(authPrefix+"/verify-otp", s.authHandler.VerifyOTP).Methods(http.MethodPost)

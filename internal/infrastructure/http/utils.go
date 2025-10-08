@@ -101,3 +101,11 @@ func logResponse(status int, data interface{}) {
 		status, time.Now().Format(time.RFC3339), string(jsonData),
 	)
 }
+
+func GetUserIpAddress(r *http.Request) string {
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+	}
+	return clientIP
+}

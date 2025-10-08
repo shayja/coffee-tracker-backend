@@ -14,11 +14,11 @@ import (
 )
 
 // initializeDependencies sets up all dependencies (database, repositories, use cases, handlers)
-	func (s *Server) initializeDependencies() error {
-		// Initialize database
-		db, err := database.NewSupabaseConnection(s.config.DatabaseURL)
-		if err != nil {
-			return err
+func (s *Server) initializeDependencies() error {
+	// Initialize database
+	db, err := database.NewSupabaseDB(s.config.DatabaseURL)
+	if err != nil {
+		return err
 	}
 
 	// Initialize repositories
