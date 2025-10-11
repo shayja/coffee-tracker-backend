@@ -28,7 +28,7 @@ type Server struct {
 	userSettingsHandler *handlers.UserSettingsHandler
 	healthHandler       *handlers.HealthHandler
 	authHandler         *handlers.AuthHandler
-	jwtService          *auth.JWTService
+	tokenService        auth.TokenService
 	userRepo            repositories.UserRepository
 }
 

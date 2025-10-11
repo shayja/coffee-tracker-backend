@@ -4,7 +4,7 @@ package usecases
 import (
 	"context"
 
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -18,7 +18,7 @@ func NewUpdateUserProfileUseCase(userRepo repositories.UserRepository) *UpdateUs
 	return &UpdateUserProfileUseCase{userRepo: userRepo}
 }
 
-func (uc *UpdateUserProfileUseCase) Execute(ctx context.Context, userID uuid.UUID, req *dto.UpdateUserProfileRequest) error {
+func (uc *UpdateUserProfileUseCase) Execute(ctx context.Context, userID uuid.UUID, req *models.UpdateUserProfileRequest) error {
 	 if (req.Name == nil || *req.Name == "") && (req.Email == nil || *req.Email == "") {
         return ErrInvalidInput
     }

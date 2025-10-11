@@ -4,7 +4,8 @@ package handlers
 import (
 	"coffee-tracker-backend/internal/infrastructure/auth"
 	http_utils "coffee-tracker-backend/internal/infrastructure/http"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/usecases"
 	"encoding/json"
@@ -16,7 +17,7 @@ import (
 )
 
 type AuthHandler struct {
-	jwtService            *auth.JWTService
+	tokenService          auth.TokenService
 	getUserByIDUC         *usecases.GetUserByIDUseCase
 	getUserByMobileUC     *usecases.GetUserByMobileUseCase
 	genereteOtpUC         *usecases.GenerateOtpUseCase
@@ -27,7 +28,7 @@ type AuthHandler struct {
 }
 
 func NewAuthHandler(
-	jwtService *auth.JWTService,
+	tokenService auth.TokenService,
 	getUserByIDUC *usecases.GetUserByIDUseCase,
 	getUserByMobileUC *usecases.GetUserByMobileUseCase,
 	genereteOtpUC *usecases.GenerateOtpUseCase,
@@ -36,11 +37,11 @@ func NewAuthHandler(
 	getRefreshTokenUC *usecases.GetRefreshTokenUseCase,
 	deleteRefreshTokenUC *usecases.DeleteRefreshTokenUseCase,
 ) *AuthHandler {
-	if jwtService == nil {
+	if tokenService == nil {
 		log.Fatal("JWT service is required")
 	}
 	return &AuthHandler{
-		jwtService:           jwtService,
+		tokenService:         tokenService,
 		getUserByIDUC:        getUserByIDUC,
 		getUserByMobileUC:    getUserByMobileUC,
 		genereteOtpUC:        genereteOtpUC,
@@ -55,7 +56,7 @@ func NewAuthHandler(
 func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 	http_utils.LogRequest(r)
 
-	var req dto.SendOtpRequest
+	var req models.SendOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Mobile == "" {
 		http_utils.WriteError(w, http.StatusBadRequest, "Invalid request")
 		return
@@ -72,7 +73,7 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate OTP")
 		return
 	}
-	http_utils.WriteJSON(w, http.StatusOK, dto.SendOtpResponse{
+	http_utils.WriteJSON(w, http.StatusOK, models.SendOtpResponse{
 		Message: "OTP sent successfully",
 	})
 }
@@ -81,7 +82,7 @@ func (h *AuthHandler) RequestOTP(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 	http_utils.LogRequest(r)
 
-	var req dto.VerifyOtpRequest
+	var req models.VerifyOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http_utils.WriteError(w, http.StatusBadRequest, "Invalid request")
 		return
@@ -99,30 +100,30 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := h.jwtService.GenerateAccessToken(user.ID)
+	accessToken, err := h.tokenService.GenerateAccessToken(user.ID)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate access token")
 		return
 	}
 
-	refreshToken, err := h.jwtService.GenerateRefreshToken(user.ID)
+	refreshToken, err := h.tokenService.GenerateRefreshToken(user.ID)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate refresh token")
 		return
 	}
 
-	refreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
+	refreshExpiry := time.Now().Add(h.tokenService.RefreshExpiry())
 	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, req.DeviceID, refreshToken, refreshExpiry); err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
 		return
 	}
 
-	http_utils.WriteJSON(w, http.StatusOK, dto.AuthResponse{
-		TokenPair: dto.TokenPair{
+	http_utils.WriteJSON(w, http.StatusOK, models.AuthResponse{
+		TokenPair: models.TokenPair{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 		},
-		User: dto.LoggedInUserResponse{
+		User: models.LoggedInUserResponse{
 			ID:     user.ID,
 			Name:   user.Name,
 			Mobile: user.Mobile,
@@ -134,7 +135,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	http_utils.LogRequest(r)
 
-	var req dto.RefreshTokenRequest
+	var req models.RefreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
 		http_utils.WriteError(w, http.StatusBadRequest, "Missing arguments")
 		return
@@ -146,14 +147,14 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := h.jwtService.ExtractUserIDFromToken(tokenString)
+	userID, err := h.tokenService.ExtractUserIDFromToken(tokenString)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
 
-	claims, err := h.jwtService.ValidateTokenString(tokenString)
-	if err != nil || !h.jwtService.IsRefreshToken(claims) {
+	claims, err := h.tokenService.ValidateTokenString(tokenString)
+	if err != nil || !h.tokenService.IsRefreshToken(claims) {
 		http_utils.WriteError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
@@ -169,26 +170,26 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newAccessToken, err := h.jwtService.GenerateAccessToken(userID)
+	newAccessToken, err := h.tokenService.GenerateAccessToken(userID)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate access token")
 		return
 	}
 
-	newRefreshToken, err := h.jwtService.GenerateRefreshToken(userID)
+	newRefreshToken, err := h.tokenService.GenerateRefreshToken(userID)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to generate refresh token")
 		return
 	}
 
-	newRefreshExpiry := time.Now().Add(h.jwtService.RefreshExpiry())
+	newRefreshExpiry := time.Now().Add(h.tokenService.RefreshExpiry())
 	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID, newRefreshToken, newRefreshExpiry); err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
 		return
 	}
 
-	http_utils.WriteJSON(w, http.StatusOK, dto.RefreshTokenResponse{
-		TokenPair: dto.TokenPair{
+	http_utils.WriteJSON(w, http.StatusOK, models.RefreshTokenResponse{
+		TokenPair: models.TokenPair{
 			AccessToken:  newAccessToken,
 			RefreshToken: newRefreshToken,
 		},
@@ -204,7 +205,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req dto.DeleteTokenRequest
+	var req models.DeleteTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
 		http_utils.WriteError(w, http.StatusBadRequest, "Invalid or missing device_id")
 		return
@@ -233,7 +234,7 @@ func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http_utils.WriteJSON(w, http.StatusOK, dto.LoggedInUserResponse{
+	http_utils.WriteJSON(w, http.StatusOK, models.LoggedInUserResponse{
 		ID:     user.ID,
 		Name:   user.Name,
 		Mobile: user.Mobile,

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ func NewUpdateCoffeeEntryUseCase(coffeeRepo repositories.CoffeeEntryRepository) 
 	}
 }
 
-func (uc *UpdateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUID, entryID uuid.UUID, req *dto.UpdateCoffeeEntryRequest) (*entities.CoffeeEntry, error) {
+func (uc *UpdateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUID, entryID uuid.UUID, req *models.UpdateCoffeeEntryRequest) (*entities.CoffeeEntry, error) {
 	// if req.CoffeeType == nil {
 	// 	return nil, ErrInvalidInput
 	// }

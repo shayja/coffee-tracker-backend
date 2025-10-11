@@ -1,5 +1,5 @@
-// file: internal/infrastructure/http/dto/coffee_dto.go
-package dto
+// file: internal/infrastructure/http/models/coffee_dto.go
+package models
 
 import (
 	"time"

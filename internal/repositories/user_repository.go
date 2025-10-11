@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 
 	"github.com/google/uuid"
 )
@@ -17,7 +17,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*entities.User, error)
 	Update(ctx context.Context, user *entities.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	UpdateProfile(ctx context.Context, userID uuid.UUID, req *dto.UpdateUserProfileRequest) error
+	UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserProfileRequest) error
 	UpdateProfileImage(ctx context.Context, user *entities.User) error
 	DeleteProfileImage(ctx context.Context, userID uuid.UUID) error
 

@@ -1,66 +1,53 @@
 # Coffee Tracker Backend Architecture
 
 ```text
-                         ┌───────────────────────┐
-                         │      HTTP/API         │
-                         │ (mux router + DTOs)  │
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │       Middleware      │
-                         │ - AuthMiddleware      │
-                         │ - UserMiddleware      │
-                         │ - CorsMiddleware      │
-                         │ - LoggingMiddleware   │
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │       Handlers        │
-                         │ - auth_handler.go     │
-                         │ - coffee_entry_handler│
-                         │ - user_handler.go     │
-                         │ - generic_kv_handler  │
-                         │   Uses DTOs           │
-                         │   (requests/responses)│
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │       Usecases        │
-                         │ - Create/Edit/Delete  │
-                         │   coffee entries      │
-                         │ - Generate/Validate OTP│
-                         │ - Save/Get/Delete     │
-                         │   Refresh Tokens      │
-                         │ - Get/Update Profile  │
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │     Repositories      │
-                         │ Interfaces:           │
-                         │ - UserRepository      │
-                         │ - CoffeeRepo          │
-                         │ - AuthRepository      │
-                         │ Implementations:     │
-                         │ - Postgres/Supabase  │
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │   Database & Storage  │
-                         │ - PostgreSQL/Supabase │
-                         │ - Supabase Storage    │
-                         └─────────┬────────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────────┐
-                         │   JWT / Auth Layer    │
-                         │ - jwt_service.go      │
-                         │ - jwt_utils.go        │
-                         │ - Token generation    │
-                         │ - Token validation    │
-                         └───────────────────────┘
+           ┌──────────────────────────────┐
+           │         HTTP Layer           │
+           │ ┌─────────────────────────┐ │
+           │ │  Handlers (controllers) │ │
+           │ └─────────────────────────┘ │
+           │ ┌─────────────────────────┐ │
+           │ │ Middleware (auth, logging, │
+           │ │ cors, user, etc.)          │
+           │ └─────────────────────────┘ │
+           │ ┌─────────────────────────┐ │
+           │ │ DTOs / Request/Response │ │
+           │ └─────────────────────────┘ │
+           └─────────────▲──────────────┘
+                         │
+                         │ calls
+                         ▼
+           ┌──────────────────────────────┐
+           │        Use Cases Layer       │
+           │ ┌─────────────────────────┐ │
+           │ │  createCoffeeEntry       │ │
+           │ │  getCoffeeEntries        │ │
+           │ │  generateOTP             │ │
+           │ │  getUserSettings         │ │
+           │ └─────────────────────────┘ │
+           └─────────────▲──────────────┘
+                         │
+                         │ uses
+                         ▼
+           ┌──────────────────────────────┐
+           │      Repository Layer        │
+           │ ┌─────────────────────────┐ │
+           │ │ Postgres / Supabase DB   │ │
+           │ │ Implementations          │ │
+           │ │  - CoffeeEntryRepoImpl   │ │
+           │ │  - UserRepoImpl          │ │
+           │ │  - KVRepoImpl            │ │
+           │ └─────────────────────────┘ │
+           └─────────────▲──────────────┘
+                         │
+                         │ accesses / persists
+                         ▼
+           ┌──────────────────────────────┐
+           │ Infrastructure / Services    │
+           │ ┌─────────────────────────┐ │
+           │ │ JWTService / Auth         │ │
+           │ │ SMS Service / Twilio      │ │
+           │ │ Storage / Supabase        │ │
+           │ └─────────────────────────┘ │
+           └──────────────────────────────┘
 ```

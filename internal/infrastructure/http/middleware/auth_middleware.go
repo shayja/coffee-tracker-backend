@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func AuthMiddleware(jwtService *auth.JWTService) func(http.Handler) http.Handler {
+func AuthMiddleware(tokenService auth.TokenService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString, err := utils.ExtractBearerToken(r)
@@ -19,7 +19,7 @@ func AuthMiddleware(jwtService *auth.JWTService) func(http.Handler) http.Handler
 				return
 			}
 
-			userID, err := jwtService.ExtractUserIDFromToken(tokenString)
+			userID, err := tokenService.ExtractUserIDFromToken(tokenString)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return

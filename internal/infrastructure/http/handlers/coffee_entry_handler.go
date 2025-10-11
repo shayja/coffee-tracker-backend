@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	http_utils "coffee-tracker-backend/internal/infrastructure/http"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/usecases"
 )
 
@@ -42,7 +42,7 @@ func (h *CoffeeEntryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := http_utils.GetUserIDOrAbort(w, r)
 	if !ok { return }
 
-	var req dto.CreateCoffeeEntryRequest
+	var req models.CreateCoffeeEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http_utils.WriteError(w, http.StatusBadRequest, err.Error())
 		return
@@ -100,7 +100,7 @@ func (h *CoffeeEntryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req dto.UpdateCoffeeEntryRequest
+	var req models.UpdateCoffeeEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http_utils.WriteError(w, http.StatusBadRequest, err.Error())
 		return

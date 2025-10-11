@@ -1,5 +1,5 @@
-// file: internal/infrastructure/http/dto/kv_dto.go
-package dto
+// file: internal/infrastructure/http/models/kv_dto.go
+package models
 
 import "coffee-tracker-backend/internal/entities"
 

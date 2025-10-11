@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	httpUtils "coffee-tracker-backend/internal/infrastructure/http"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/usecases"
 )
 
@@ -58,7 +58,7 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req dto.UpdateUserProfileRequest
+	var req models.UpdateUserProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httpUtils.WriteError(w, http.StatusBadRequest, "Invalid JSON", err.Error())
 		return

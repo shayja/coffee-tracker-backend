@@ -2,7 +2,6 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,48 +9,82 @@ import (
 	"github.com/google/uuid"
 )
 
+// JWTService implements TokenService
+var _ TokenService = (*JWTService)(nil)
+
+//
+// ===========================
+// 🧩 Implementation
+// ===========================
+//
+
+// JWTService provides JWT generation and validation
 type JWTService struct {
 	secret        string
 	accessExpiry  time.Duration
 	refreshExpiry time.Duration
+	signingMethod jwt.SigningMethod
+	nowFunc       func() time.Time // injected for testability
 }
 
+// NewJWTService creates a new JWT service.
 func NewJWTService(secret string, accessExpiry, refreshExpiry time.Duration) *JWTService {
 	return &JWTService{
 		secret:        secret,
 		accessExpiry:  accessExpiry,
 		refreshExpiry: refreshExpiry,
+		signingMethod: jwt.SigningMethodHS256,
+		nowFunc:       func() time.Time { return time.Now().UTC() }, // can be replaced in tests
 	}
 }
 
+//
+// ===========================
+// 🏷️ Token Generation
+// ===========================
+//
+
+// GenerateAccessToken creates a short-lived JWT for API access.
 func (s *JWTService) GenerateAccessToken(userID uuid.UUID) (string, error) {
+	now := s.nowFunc()
 	claims := jwt.MapClaims{
-		"sub":   userID.String(),
-		"aud":   "authenticated",
-		"role":  "authenticated",
-		"exp":   time.Now().Add(s.accessExpiry).Unix(),
-		"iat":   time.Now().Unix(),
-		"type":  "access",
-		"token": uuid.New().String(), // Unique token ID for potential blacklisting
+		"sub":  userID.String(),
+		"aud":  "authenticated",
+		"role": "authenticated",
+		"exp":  now.Add(s.accessExpiry).Unix(),
+		"iat":  now.Unix(),
+		"type": "access",
+		"jti":  uuid.New().String(), // JWT ID for revocation
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(s.signingMethod, claims)
 	return token.SignedString([]byte(s.secret))
 }
 
+// GenerateRefreshToken creates a long-lived JWT for session refresh.
 func (s *JWTService) GenerateRefreshToken(userID uuid.UUID) (string, error) {
+	now := s.nowFunc()
 	claims := jwt.MapClaims{
-		"sub":   userID.String(),
-		"exp":   time.Now().Add(s.refreshExpiry).Unix(),
-		"iat":   time.Now().Unix(),
-		"type":  "refresh",
-		"token": uuid.New().String(),
+		"sub":  userID.String(),
+		"aud":  "authenticated",
+		"role": "refresh",
+		"exp":  now.Add(s.refreshExpiry).Unix(),
+		"iat":  now.Unix(),
+		"type": "refresh",
+		"jti":  uuid.New().String(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(s.signingMethod, claims)
 	return token.SignedString([]byte(s.secret))
 }
 
+//
+// ===========================
+// 🔍 Token Validation
+// ===========================
+//
+
+// ValidateTokenString parses and validates a JWT string.
 func (s *JWTService) ValidateTokenString(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -61,29 +94,26 @@ func (s *JWTService) ValidateTokenString(tokenString string) (jwt.MapClaims, err
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid token: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
 	}
-
 	if !token.Valid {
-		return nil, errors.New("token is not valid")
+		return nil, ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid token claims")
+		return nil, ErrInvalidClaims
 	}
 
-	// Optional expiration check (already in claims["exp"])
-	if exp, ok := claims["exp"].(float64); ok {
-		if time.Unix(int64(exp), 0).Before(time.Now()) {
-			return nil, errors.New("token expired")
-		}
+	// Check expiration defensively
+	if exp, ok := claims["exp"].(float64); ok && time.Unix(int64(exp), 0).Before(s.nowFunc()) {
+		return nil, ErrExpiredToken
 	}
 
 	return claims, nil
 }
 
-// ExtractUserIDFromToken gets the user ID from a validated token string.
+// ExtractUserIDFromToken retrieves the user ID from a validated token string.
 func (s *JWTService) ExtractUserIDFromToken(tokenString string) (uuid.UUID, error) {
 	claims, err := s.ValidateTokenString(tokenString)
 	if err != nil {
@@ -92,21 +122,53 @@ func (s *JWTService) ExtractUserIDFromToken(tokenString string) (uuid.UUID, erro
 
 	sub, ok := claims["sub"].(string)
 	if !ok || sub == "" {
-		return uuid.Nil, errors.New("user ID not found in token")
+		return uuid.Nil, ErrMissingUserID
 	}
 
 	return uuid.Parse(sub)
 }
 
+// TokenType returns the type of token ("access" or "refresh")
+func (s *JWTService) TokenType(claims jwt.MapClaims) string {
+	if t, ok := claims["type"].(string); ok {
+		return t
+	}
+	return ""
+}
+
+// IsRefreshToken returns true if claims belong to a refresh token
 func (s *JWTService) IsRefreshToken(claims jwt.MapClaims) bool {
-	tokenType, ok := claims["type"].(string)
-	return ok && tokenType == "refresh"
+	return s.TokenType(claims) == "refresh"
 }
 
-func (s *JWTService) RefreshExpiry() time.Duration {
-	return s.refreshExpiry
+// ParseAndValidate is a helper that returns both userID and claims
+func (s *JWTService) ParseAndValidate(tokenString string) (uuid.UUID, jwt.MapClaims, error) {
+	claims, err := s.ValidateTokenString(tokenString)
+	if err != nil {
+		return uuid.Nil, nil, err
+	}
+
+	uid, err := s.ExtractUserIDFromToken(tokenString)
+	return uid, claims, err
 }
 
-func (s *JWTService) AccessExpiry() time.Duration {
-	return s.accessExpiry
+//
+// ===========================
+// ⏱️ Accessors
+// ===========================
+//
+
+func (s *JWTService) AccessExpiry() time.Duration  { return s.accessExpiry }
+func (s *JWTService) RefreshExpiry() time.Duration { return s.refreshExpiry }
+
+//
+// ===========================
+// 🧪 Test helper
+// ===========================
+//
+
+// WithNow allows tests to control current time.
+func (s *JWTService) WithNow(f func() time.Time) *JWTService {
+	s.nowFunc = f
+	return s
 }

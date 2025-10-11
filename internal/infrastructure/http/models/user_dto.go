@@ -1,5 +1,5 @@
-// file: internal/infrastructure/http/dto/user_dto.go
-package dto
+// file: internal/infrastructure/http/models/user_dto.go
+package models
 
 import (
 	"github.com/google/uuid"

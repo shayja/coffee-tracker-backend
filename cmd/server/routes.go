@@ -59,7 +59,7 @@ func (s *Server) registerPublicRoutes() {
 // -----------------------------
 func (s *Server) registerProtectedRoutes() {
 	api := s.router.NewRoute().Subrouter()
-	api.Use(middleware.AuthMiddleware(s.jwtService))
+	api.Use(middleware.AuthMiddleware(s.tokenService))
 	api.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
 
 	// --- Auth routes ---

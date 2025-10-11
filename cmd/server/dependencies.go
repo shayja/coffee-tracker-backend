@@ -10,7 +10,6 @@ import (
 	"coffee-tracker-backend/internal/infrastructure/storage"
 	"coffee-tracker-backend/internal/usecases"
 	"fmt"
-	"time"
 )
 
 // initializeDependencies sets up all dependencies (database, repositories, use cases, handlers)
@@ -82,9 +81,9 @@ func (s *Server) initializeDependencies() error {
 		usecases.NewUpdateUserSettingUseCase(settingsRepo),
 	)
 	s.healthHandler = handlers.NewHealthHandler()
-	s.jwtService = auth.NewJWTService(s.config.JWTSecret, 15*time.Minute, 7*24*time.Hour)
+	s.tokenService = auth.NewJWTService(s.config.JWTSecret, s.config.AccessTokenTTL, s.config.RefreshTokenTTL)
 	s.authHandler = handlers.NewAuthHandler(
-		s.jwtService,
+		s.tokenService,
 		getUserByIDUC,
 		getUserByMobileUC,
 		generateOtpUC,

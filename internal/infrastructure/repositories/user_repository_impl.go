@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/http/dto"
+	"coffee-tracker-backend/internal/infrastructure/http/models"
 	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 
@@ -111,7 +111,7 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 // UpdateProfile updates user profile fields based on request DTO
-func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID, req *dto.UpdateUserProfileRequest) error {
+func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserProfileRequest) error {
 	now := time.Now().UTC()
 	query := `UPDATE users SET `
 	params := []interface{}{}
