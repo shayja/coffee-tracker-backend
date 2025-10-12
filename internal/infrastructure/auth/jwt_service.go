@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"fmt"
 	"time"
 
@@ -34,7 +35,7 @@ func NewJWTService(secret string, accessExpiry, refreshExpiry time.Duration) *JW
 		accessExpiry:  accessExpiry,
 		refreshExpiry: refreshExpiry,
 		signingMethod: jwt.SigningMethodHS256,
-		nowFunc:       func() time.Time { return time.Now().UTC() }, // can be replaced in tests
+		nowFunc:       func() time.Time { return utils.NowUTC() }, // can be replaced in tests
 	}
 }
 

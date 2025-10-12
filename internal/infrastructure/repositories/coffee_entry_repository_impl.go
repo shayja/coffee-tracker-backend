@@ -53,7 +53,7 @@ func (r *CoffeeEntryRepositoryImpl) Update(ctx context.Context, entry *entities.
 		entry.Timestamp,
 		entry.CoffeeTypeID,
 		entry.SizeID,
-		time.Now().UTC(),
+		utils.NowUTC(),
 	)
 	
 	return err
@@ -182,7 +182,7 @@ func (r *CoffeeEntryRepositoryImpl) DeleteAll(ctx context.Context, userID uuid.U
 
 
 func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UUID) (*entities.CoffeeStats, error) {
-	now:= time.Now().UTC()
+
 	query := `
 		SELECT 
 			COUNT(*) as total_entries,
@@ -196,7 +196,7 @@ func (r *CoffeeEntryRepositoryImpl) GetStats(ctx context.Context, userID uuid.UU
 	`
 	
 	var stats entities.CoffeeStats
-	err := r.db.QueryRowContext(ctx, query, userID, now).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID, utils.NowUTC()).Scan(
 		&stats.TotalEntries,
 		// &stats.TotalCaffeine,
 		// &stats.AverageRating,

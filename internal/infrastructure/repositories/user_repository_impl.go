@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"coffee-tracker-backend/internal/entities"
 	"coffee-tracker-backend/internal/infrastructure/http/models"
@@ -81,7 +80,6 @@ func (r *UserRepositoryImpl) GetByMobile(ctx context.Context, mobile string) (*e
 
 // Update updates user's email, mobile, name
 func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
-	now := time.Now().UTC()
 	query := `
 		UPDATE users 
 		SET email = $2, mobile = $3, name = $4, updated_at = $5
@@ -92,7 +90,7 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user *entities.User) er
 		utils.SafeToLower(user.Email),
 		utils.NullIfEmpty(user.Mobile),
 		utils.NullIfEmpty(user.Name),
-		now,
+		utils.NowUTC(),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update user %s: %w", user.ID, err)
@@ -112,7 +110,6 @@ func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 
 // UpdateProfile updates user profile fields based on request DTO
 func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID, req *models.UpdateUserProfileRequest) error {
-	now := time.Now().UTC()
 	query := `UPDATE users SET `
 	params := []interface{}{}
 	i := 1
@@ -148,7 +145,7 @@ func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID
 	// Always update updated_at
 	query = strings.TrimSuffix(query, ", ")
 	query += `, updated_at = $` + strconv.Itoa(i) + ` WHERE id = $` + strconv.Itoa(i+1)
-	params = append(params, now, userID)
+	params = append(params, utils.NowUTC(), userID)
 
 	_, err := r.db.ExecContext(ctx, query, params...)
 	if err != nil {
@@ -159,9 +156,8 @@ func (r *UserRepositoryImpl) UpdateProfile(ctx context.Context, userID uuid.UUID
 
 // UpdateProfileImage updates user's avatar_url
 func (r *UserRepositoryImpl) UpdateProfileImage(ctx context.Context, user *entities.User) error {
-	now := time.Now().UTC()
 	query := `UPDATE users SET avatar_url = $1, updated_at = $3 WHERE id = $2`
-	_, err := r.db.ExecContext(ctx, query, user.AvatarURL, user.ID, now)
+	_, err := r.db.ExecContext(ctx, query, user.AvatarURL, user.ID, utils.NowUTC())
 	if err != nil {
 		return fmt.Errorf("failed to update profile image for user %s: %w", user.ID, err)
 	}
@@ -170,9 +166,8 @@ func (r *UserRepositoryImpl) UpdateProfileImage(ctx context.Context, user *entit
 
 // DeleteProfileImage sets user's avatar_url to NULL
 func (r *UserRepositoryImpl) DeleteProfileImage(ctx context.Context, userID uuid.UUID) error {
-	now := time.Now().UTC()
 	query := `UPDATE users SET avatar_url = NULL, updated_at = $2 WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, userID, now)
+	_, err := r.db.ExecContext(ctx, query, userID, utils.NowUTC())
 	if err != nil {
 		return fmt.Errorf("failed to delete profile image for user %s: %w", userID, err)
 	}

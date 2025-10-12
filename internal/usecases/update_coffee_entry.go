@@ -3,10 +3,10 @@ package usecases
 
 import (
 	"context"
-	"time"
 
 	"coffee-tracker-backend/internal/entities"
 	"coffee-tracker-backend/internal/infrastructure/http/models"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ func (uc *UpdateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUI
 		// Price:      req.Price,
 		// Rating:     req.Rating,
 		Timestamp: 		req.Timestamp,
-		UpdatedAt:  	time.Now().UTC(),
+		UpdatedAt:  	utils.NowUTC(),
 	}
 
 	if err := uc.coffeeRepo.Update(ctx, entry); err != nil {

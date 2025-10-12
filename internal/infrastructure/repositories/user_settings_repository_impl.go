@@ -3,11 +3,11 @@ package repositories
 
 import (
 	"coffee-tracker-backend/internal/entities"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -39,14 +39,13 @@ func (r *UserSettingsRepositoryImpl) Get(ctx context.Context, userID uuid.UUID) 
 
 // Patch updates one or more user settings dynamically
 func (r *UserSettingsRepositoryImpl) Patch(ctx context.Context, userID uuid.UUID, setting entities.Setting, value interface{}) error {
-	now:= time.Now().UTC()
     column := setting.ColumnName()
 	if column == "" {
 		return fmt.Errorf("unknown setting: %d", setting)
 	}
 
 	query := fmt.Sprintf(`UPDATE user_settings SET %s = $1, updated_at = $3 WHERE user_id = $2`, column)
-	_, err := r.db.ExecContext(ctx, query, value, userID, now)
+	_, err := r.db.ExecContext(ctx, query, value, userID, utils.NowUTC())
 	return err
 }
 
@@ -56,8 +55,7 @@ func (r *UserSettingsRepositoryImpl) Reset(ctx context.Context, userID uuid.UUID
 	if column == "" {
 		return fmt.Errorf("unknown setting: %d", setting)
 	}
-    now:= time.Now().UTC()
     query := fmt.Sprintf(`UPDATE user_settings SET %s = false, updated_at = $2 WHERE user_id = $1`, column)
-    _, err := r.db.ExecContext(ctx, query, userID, now)
+    _, err := r.db.ExecContext(ctx, query, userID, utils.NowUTC())
     return err
 }

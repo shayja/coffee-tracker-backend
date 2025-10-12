@@ -4,6 +4,7 @@ package http
 import (
 	"bytes"
 	"coffee-tracker-backend/internal/contextkeys"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -98,7 +99,7 @@ func logResponse(status int, data interface{}) {
 	jsonData, _ := json.MarshalIndent(data, "", "  ")
 	fmt.Printf(
 		"[HTTP RESPONSE] %d at %s\nBody: %s\n\n",
-		status, time.Now().Format(time.RFC3339), string(jsonData),
+		status, utils.NowUTC().Format(time.RFC3339), string(jsonData),
 	)
 }
 

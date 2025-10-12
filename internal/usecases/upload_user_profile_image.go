@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"time"
 
 	"coffee-tracker-backend/internal/entities"
-	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/infrastructure/storage"
 	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
@@ -21,11 +19,11 @@ import (
 type UploadUserProfileImageUseCase struct {
     userRepo repositories.UserRepository
     storage storage.StorageService
-    config  *config.Config
+    bucket string 
 }
 
-func NewUploadUserProfileImageUseCase(userRepo repositories.UserRepository, storage storage.StorageService, config  *config.Config) *UploadUserProfileImageUseCase {
-	return &UploadUserProfileImageUseCase{ userRepo: userRepo, storage: storage, config: config }
+func NewUploadUserProfileImageUseCase(userRepo repositories.UserRepository, storage storage.StorageService, bucket string) *UploadUserProfileImageUseCase {
+	return &UploadUserProfileImageUseCase{ userRepo: userRepo, storage: storage, bucket: bucket }
 }
 
 func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uuid.UUID, filename string, file io.Reader) (string, error) {
@@ -35,7 +33,7 @@ func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uui
 	userFolderPath := fmt.Sprintf("%s/%s%s", userID, utils.GenerateString(avatarFileNameLangth), extension)
 
     // Upload to storage
-    url, err := uc.storage.UploadFile(ctx, uc.config.ProfileImageBucket, userFolderPath, file, true)
+    url, err := uc.storage.UploadFile(ctx, uc.bucket, userFolderPath, file, true)
 
     if err != nil {
         return "", err
@@ -45,7 +43,7 @@ func (uc *UploadUserProfileImageUseCase) Execute(ctx context.Context, userID uui
     user := &entities.User{
         ID:        userID,
         AvatarURL: url,
-        UpdatedAt: time.Now().UTC(),
+        UpdatedAt: utils.NowUTC(),
     }
     if err := uc.userRepo.UpdateProfileImage(ctx, user); err != nil {
         return "", err

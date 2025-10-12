@@ -3,10 +3,10 @@ package usecases
 
 import (
 	"context"
-	"time"
 
 	"coffee-tracker-backend/internal/entities"
 	"coffee-tracker-backend/internal/infrastructure/http/models"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -40,8 +40,8 @@ func (uc *CreateCoffeeEntryUseCase) Execute(ctx context.Context, userID uuid.UUI
 		Latitude:   req.Latitude,
     	Longitude:  req.Longitude,
 		Timestamp: req.Timestamp,
-		CreatedAt:  time.Now().UTC(),
-		UpdatedAt:  time.Now().UTC(),
+		CreatedAt:  utils.NowUTC(),
+		UpdatedAt:  utils.NowUTC(),
 	}
 
 	if err := uc.coffeeRepo.Create(ctx, entry); err != nil {

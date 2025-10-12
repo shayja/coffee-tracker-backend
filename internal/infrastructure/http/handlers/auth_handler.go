@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -112,7 +111,7 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshExpiry := time.Now().Add(h.tokenService.RefreshExpiry())
+	refreshExpiry := utils.NowUTC().Add(h.tokenService.RefreshExpiry())
 	if err := h.saveRefreshTokenUC.Execute(r.Context(), user.ID, req.DeviceID, refreshToken, refreshExpiry); err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
 		return
@@ -165,7 +164,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if time.Now().After(expiresAt) {
+	if utils.NowUTC().After(expiresAt) {
 		http_utils.WriteError(w, http.StatusUnauthorized, "Refresh token expired")
 		return
 	}
@@ -182,7 +181,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newRefreshExpiry := time.Now().Add(h.tokenService.RefreshExpiry())
+	newRefreshExpiry := utils.NowUTC().Add(h.tokenService.RefreshExpiry())
 	if err := h.saveRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID, newRefreshToken, newRefreshExpiry); err != nil {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
 		return

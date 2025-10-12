@@ -3,6 +3,7 @@ package main
 
 import (
 	"coffee-tracker-backend/internal/infrastructure/auth"
+	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/infrastructure/database"
 	"coffee-tracker-backend/internal/infrastructure/http/handlers"
 	"coffee-tracker-backend/internal/infrastructure/notifications"
@@ -54,8 +55,8 @@ func (s *Server) initializeDependencies() error {
 	getStatsUseCase := usecases.NewGetCoffeeStatsUseCase(coffeeRepo)
 	getUserByIDUC := usecases.NewGetUserByIDUseCase(userRepo)
 	getUserByMobileUC := usecases.NewGetUserByMobileUseCase(userRepo)
-	generateOtpUC := usecases.NewGenerateOtpUseCase(authRepo, s.config, smsService)
-	validateOtpUC := usecases.NewValidateOtpUseCase(authRepo, s.config)
+	generateOtpUC := usecases.NewGenerateOtpUseCase(authRepo, smsService, config.OtpStrength(s.config.OtpStrength))
+	validateOtpUC := usecases.NewValidateOtpUseCase(authRepo, s.config.MagicOtp)
 	saveRefreshTokenUC := usecases.NewSaveRefreshTokenUseCase(authRepo)
 	getRefreshTokenUC := usecases.NewGetRefreshTokenUseCase(authRepo)
 	deleteRefreshTokenUC := usecases.NewDeleteRefreshTokenUseCase(authRepo)
@@ -64,7 +65,7 @@ func (s *Server) initializeDependencies() error {
 
 	getProfileUC := usecases.NewGetUserProfileUseCase(userRepo)
 	updateProfileUC := usecases.NewUpdateUserProfileUseCase(userRepo)
-	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo, storageService, s.config)
+	uploadImageUC := usecases.NewUploadUserProfileImageUseCase(userRepo, storageService, s.config.ProfileImageBucket)
 	deleteImageUC := usecases.NewDeleteUserProfileImageUseCase(userRepo)
 
 	// Initialize handlers

@@ -2,7 +2,6 @@
 package usecases
 
 import (
-	"coffee-tracker-backend/internal/infrastructure/config"
 	"coffee-tracker-backend/internal/repositories"
 	"context"
 
@@ -11,16 +10,16 @@ import (
 
 type ValidateOtpUseCase struct {
 	authRepo repositories.AuthRepository
-	config  *config.Config
+	magicOtp  string
 }
 
-func NewValidateOtpUseCase(authRepo repositories.AuthRepository, config  *config.Config) *ValidateOtpUseCase {
-	return &ValidateOtpUseCase{authRepo: authRepo, config: config}
+func NewValidateOtpUseCase(authRepo repositories.AuthRepository, magicOtp  string) *ValidateOtpUseCase {
+	return &ValidateOtpUseCase{authRepo: authRepo, magicOtp: magicOtp}
 }
 
 func (uc *ValidateOtpUseCase) Execute(ctx context.Context, userID uuid.UUID, otp string) (bool, error) {
 	
-	if otp == uc.config.MagicOtp {
+	if otp == uc.magicOtp {
 		return true, nil
 	}
 	// Check if OTP is valid and not expired

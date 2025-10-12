@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"time"
 
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"coffee-tracker-backend/internal/repositories"
 
 	"github.com/google/uuid"
@@ -34,13 +35,13 @@ func (r *AuthRepositoryImpl) SaveOTP(ctx context.Context, userID uuid.UUID, otp 
 // GetValidOTP checks if the OTP is valid and unused
 func (r *AuthRepositoryImpl) GetValidOTP(ctx context.Context, userID uuid.UUID, otp string) (bool, error) {
 	var valid bool
-	now:= time.Now().UTC()
+
 	query := `
 		SELECT COUNT(*) > 0
 		FROM user_otps
 		WHERE user_id = $1 AND otp = $2 AND expires_at > $3 AND used = FALSE
 	`
-	err := r.db.QueryRowContext(ctx, query, userID, otp, now).Scan(&valid)
+	err := r.db.QueryRowContext(ctx, query, userID, otp, utils.NowUTC()).Scan(&valid)
 	if err != nil {
 		return false, err
 	}
@@ -49,15 +50,15 @@ func (r *AuthRepositoryImpl) GetValidOTP(ctx context.Context, userID uuid.UUID, 
 
 // InvalidateOTP marks the OTP as used
 func (r *AuthRepositoryImpl) InvalidateOTP(ctx context.Context, userID uuid.UUID, otp string) error {
-	now := time.Now().UTC()
+
 	query := `UPDATE user_otps SET used = TRUE WHERE user_id = $1 AND otp = $2 AND expires_at > $3`
-    _, err := r.db.ExecContext(ctx, query, userID, otp, now)
+    _, err := r.db.ExecContext(ctx, query, userID, otp, utils.NowUTC())
     return err
 }
 
 // SaveRefreshToken inserts or updates a refresh token for a device
 func (r *AuthRepositoryImpl) SaveRefreshToken(ctx context.Context, userID, deviceID uuid.UUID, token string, expiresAt time.Time) error {
-	now := time.Now().UTC()
+
 	query := `
 		INSERT INTO user_refresh_tokens (user_id, device_id, token, expires_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -67,7 +68,7 @@ func (r *AuthRepositoryImpl) SaveRefreshToken(ctx context.Context, userID, devic
 			expires_at = EXCLUDED.expires_at,
 			updated_at = $5
 	`
-	_, err := r.db.ExecContext(ctx, query, userID, deviceID, token, expiresAt, now)
+	_, err := r.db.ExecContext(ctx, query, userID, deviceID, token, expiresAt, utils.NowUTC())
 	return err
 }
 
@@ -79,9 +80,9 @@ func (r *AuthRepositoryImpl) GetRefreshToken(ctx context.Context, userID uuid.UU
 	query := `
 		SELECT token, expires_at
 		FROM user_refresh_tokens
-		WHERE user_id = $1 AND device_id = $2 AND expires_at > NOW()
+		WHERE user_id = $1 AND device_id = $2 AND expires_at > $3
 	`
-	err := r.db.QueryRowContext(ctx, query, userID, deviceID).Scan(&token, &expiresAt)
+	err := r.db.QueryRowContext(ctx, query, userID, deviceID, utils.NowUTC()).Scan(&token, &expiresAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", time.Time{}, repositories.ErrNotFound
@@ -105,14 +106,13 @@ func (r *AuthRepositoryImpl) DeleteRefreshToken(ctx context.Context, userID uuid
 // GetUserIDByRefreshToken returns the user ID associated with a refresh token
 func (r *AuthRepositoryImpl) GetUserIDByRefreshToken(ctx context.Context, refreshToken string) (uuid.UUID, error) {
 	var userID uuid.UUID
-	now := time.Now().UTC()
 	query := `
 		SELECT user_id
 		FROM user_refresh_tokens
 		WHERE token = $1 AND expires_at > $2
 		LIMIT 1
 	`
-	err := r.db.QueryRowContext(ctx, query, refreshToken, now).Scan(&userID)
+	err := r.db.QueryRowContext(ctx, query, refreshToken, utils.NowUTC()).Scan(&userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return uuid.Nil, repositories.ErrNotFound

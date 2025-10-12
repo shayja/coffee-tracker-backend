@@ -3,6 +3,7 @@ package middleware
 
 import (
 	http_utils "coffee-tracker-backend/internal/infrastructure/http"
+	"coffee-tracker-backend/internal/infrastructure/utils"
 	"log"
 	"net/http"
 	"time"
@@ -12,11 +13,11 @@ import (
 // It is panic-safe and production-ready.
 func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+
 		lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
 		defer func() {
-			duration := time.Since(start)
+			duration := time.Since(utils.NowUTC())
 			clientIP := http_utils.GetUserIpAddress(r)
 
 			// Recover from panic (prevents server crash and still logs)
