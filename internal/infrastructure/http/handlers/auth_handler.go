@@ -87,6 +87,11 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
+		http_utils.WriteError(w, http.StatusBadRequest, "Invalid or missing device_id")
+		return
+	}
+
 	user, err := h.getUserByMobileUC.Execute(r.Context(), req.Mobile)
 	if err != nil {
 		http_utils.WriteError(w, http.StatusUnauthorized, "User not found")
