@@ -1,5 +1,5 @@
-// file: cmd/server/server.go
-package main
+// file: internal/server/server.go
+package server
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type Server struct {
 	config              *config.Config
 	router              *mux.Router
 	httpServer          *http.Server
-	logger              *log.Logger
+	Logger              *log.Logger
 	userHandler         *handlers.UserHandler
 	genericKvHandler    *handlers.GenericKVHandler
 	coffeeHandler       *handlers.CoffeeEntryHandler
@@ -46,7 +46,7 @@ func NewServer() (*Server, error) {
 	server := &Server{
 		config: cfg,
 		router: mux.NewRouter(),
-		logger: logger,
+		Logger: logger,
 	}
 
 	// Initialize dependencies and routes
@@ -71,13 +71,13 @@ func NewServer() (*Server, error) {
 // Start runs the HTTP server (blocking)
 func (s *Server) Start() error {
 	s.logServerInfo()
-	s.logger.Printf("🚀 Starting server on port %s", s.config.Port)
+	s.Logger.Printf("🚀 Starting server on port %s", s.config.Port)
 	return s.httpServer.ListenAndServe()
 }
 
 // Shutdown gracefully stops the server
 func (s *Server) Shutdown(ctx context.Context) error {
-	s.logger.Println("🧹 Shutting down server...")
+	s.Logger.Println("🧹 Shutting down server...")
 	// Attempt graceful shutdown
 	return s.httpServer.Shutdown(ctx)
 }
@@ -90,7 +90,7 @@ func (s *Server) logServerInfo() {
 	} else {
 		baseURL = "http://localhost:" + s.config.Port
 	}
-	s.logger.Printf("🌍 Environment: %s", s.config.Env)
-	s.logger.Printf("📊 Health check: %s/health", baseURL)
-	s.logger.Printf("☕ API base: %s/api/v1/*", baseURL)
+	s.Logger.Printf("🌍 Environment: %s", s.config.Env)
+	s.Logger.Printf("📊 Health check: %s/health", baseURL)
+	s.Logger.Printf("☕ API base: %s/api/v1/*", baseURL)
 }

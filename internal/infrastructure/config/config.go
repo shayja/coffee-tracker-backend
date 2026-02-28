@@ -4,8 +4,11 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 type OtpStrength string
@@ -30,6 +33,11 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️ No .env file found or error loading it, using environment variables")
+	}
+
 	accessTTL := 15 * time.Minute
 	refreshTTL := 7 * 24 * time.Hour
 

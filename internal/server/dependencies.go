@@ -1,5 +1,5 @@
-// file: cmd/server/dependencies.go
-package main
+// file: internal/server/dependencies.go
+package server
 
 import (
 	"coffee-tracker-backend/internal/infrastructure/auth"
@@ -30,7 +30,7 @@ func (s *Server) initializeDependencies() error {
 
 	// Initialize Supabase Storage client
 	if s.config.StorageURL == "" || s.config.ServiceRoleKey == "" {
-		s.logger.Fatal(fmt.Errorf("invalid storage configuration: URL or API key missing"))
+		s.Logger.Fatal(fmt.Errorf("invalid storage configuration: URL or API key missing"))
 	}
 
     storageService := storage.NewSupabaseStorageService(s.config.StorageURL, s.config.ServiceRoleKey)

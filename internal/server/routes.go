@@ -1,4 +1,5 @@
-package main
+// file: internal/server/routes.go
+package server
 
 import (
 	"net/http"
@@ -28,10 +29,10 @@ func (s *Server) setupRoutes() {
 	s.registerPublicRoutes()
 	s.registerProtectedRoutes()
 
-	s.logger.Printf("Registered routes:")
+	s.Logger.Printf("Registered routes:")
 	s.router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
     t, _ := route.GetPathTemplate()
-		s.logger.Println("  -", t)
+		s.Logger.Println("  -", t)
     	return nil
 	})
 }
@@ -87,4 +88,3 @@ func (s *Server) registerProtectedRoutes() {
 	api.HandleFunc(settingsPrefix, s.userSettingsHandler.GetAll).Methods(http.MethodGet)
 	api.HandleFunc(settingsPrefix+"/{key}", s.userSettingsHandler.Update).Methods(http.MethodPatch)
 }
-
