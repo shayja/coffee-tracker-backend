@@ -87,9 +87,9 @@ func getEnv(key, defaultValue string) string {
 
 func (c *Config) validate() error {
 	// Environment
-	validEnvs := map[string]bool{"dev": true, "staging": true, "prod": true}
+	validEnvs := map[string]bool{"dev": true, "staging": true, "production": true}
 	if _, ok := validEnvs[c.Env]; !ok {
-		return fmt.Errorf("invalid ENV: %s (must be one of: dev, staging, prod)", c.Env)
+		return fmt.Errorf("invalid ENV: %s (must be one of: dev, staging, production)", c.Env)
 	}
 
 	// Port
