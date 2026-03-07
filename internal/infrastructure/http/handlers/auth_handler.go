@@ -121,6 +121,9 @@ func (h *AuthHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) {
 		http_utils.WriteError(w, http.StatusInternalServerError, "Failed to save refresh token")
 		return
 	}
+	log.Printf("[VERIFY-OTP] ✅ Saved refresh token for userID=%s deviceID=%s expiresAt=%s token(last20)=...%s",
+		user.ID, req.DeviceID, refreshExpiry.Format("2006-01-02T15:04:05Z"),
+		refreshToken[max(0, len(refreshToken)-20):])
 
 	http_utils.WriteJSON(w, http.StatusOK, models.AuthResponse{
 		TokenPair: models.TokenPair{
@@ -141,35 +144,58 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	var req models.RefreshTokenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.DeviceID == uuid.Nil {
+		//log.Printf("[REFRESH] ❌ Bad request: decode err=%v, deviceID=%v", err, req.DeviceID)
 		http_utils.WriteError(w, http.StatusBadRequest, "Missing arguments")
 		return
 	}
+	log.Printf("[REFRESH] device_id=%s", req.DeviceID)
 
 	tokenString, err := utils.ExtractBearerToken(r)
 	if err != nil {
+		//log.Printf("[REFRESH] ❌ No bearer token: %v", err)
 		http_utils.WriteError(w, http.StatusUnauthorized, "No refresh token found")
 		return
 	}
+	//log.Printf("[REFRESH] incoming token (last 20 chars): ...%s", tokenString[max(0, len(tokenString)-20):])
 
 	userID, err := h.tokenService.ExtractUserIDFromToken(tokenString)
 	if err != nil {
+		//log.Printf("[REFRESH] ❌ ExtractUserID failed: %v", err)
 		http_utils.WriteError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
+	//log.Printf("[REFRESH] userID=%s", userID)
 
 	claims, err := h.tokenService.ValidateTokenString(tokenString)
-	if err != nil || !h.tokenService.IsRefreshToken(claims) {
+	if err != nil {
+		log.Printf("[REFRESH] ❌ ValidateToken failed: %v", err)
+		http_utils.WriteError(w, http.StatusUnauthorized, "Invalid refresh token")
+		return
+	}
+	if !h.tokenService.IsRefreshToken(claims) {
+		log.Printf("[REFRESH] ❌ Token type is not 'refresh', claims=%v", claims)
 		http_utils.WriteError(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
 
 	storedToken, expiresAt, err := h.getRefreshTokenUC.Execute(r.Context(), userID, req.DeviceID)
-	if err != nil || storedToken != tokenString {
+	if err != nil {
+		log.Printf("[REFRESH] ❌ DB lookup failed: userID=%s deviceID=%s err=%v", userID, req.DeviceID, err)
+		http_utils.WriteError(w, http.StatusUnauthorized, "Refresh token mismatch")
+		return
+	}
+	log.Printf("[REFRESH] stored token (last 20 chars): ...%s", storedToken[max(0, len(storedToken)-20):])
+	log.Printf("[REFRESH] tokens match: %v | expiresAt: %s | now: %s",
+		storedToken == tokenString, expiresAt.Format("2006-01-02T15:04:05Z"), utils.NowUTC().Format("2006-01-02T15:04:05Z"))
+
+	if storedToken != tokenString {
+		log.Printf("[REFRESH] ❌ Token mismatch — incoming != stored")
 		http_utils.WriteError(w, http.StatusUnauthorized, "Refresh token mismatch")
 		return
 	}
 
 	if utils.NowUTC().After(expiresAt) {
+		log.Printf("[REFRESH] ❌ Token expired in DB: expiresAt=%s", expiresAt)
 		http_utils.WriteError(w, http.StatusUnauthorized, "Refresh token expired")
 		return
 	}
