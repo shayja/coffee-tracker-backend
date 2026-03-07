@@ -19,6 +19,19 @@ func AuthMiddleware(tokenService auth.TokenService) func(http.Handler) http.Hand
 				return
 			}
 
+			// Validate the token and extract claims
+			claims, err := tokenService.ValidateTokenString(tokenString)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+
+			// Reject refresh tokens — only access tokens are allowed on protected routes
+			if tokenService.IsRefreshToken(claims) {
+				http.Error(w, "refresh token cannot be used for API access", http.StatusUnauthorized)
+				return
+			}
+
 			userID, err := tokenService.ExtractUserIDFromToken(tokenString)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)

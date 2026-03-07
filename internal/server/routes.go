@@ -52,7 +52,8 @@ func (s *Server) registerPublicRoutes() {
 
 	api.HandleFunc(authPrefix+"/request-otp", s.authHandler.RequestOTP).Methods(http.MethodPost)
 	api.HandleFunc(authPrefix+"/verify-otp", s.authHandler.VerifyOTP).Methods(http.MethodPost)
-	api.HandleFunc(authPrefix+"/logout", s.authHandler.Logout).Methods(http.MethodPost)
+	// /auth/refresh is public: it validates the refresh token itself, no access token needed
+	api.HandleFunc(authPrefix+"/refresh", s.authHandler.RefreshToken).Methods(http.MethodPost)
 }
 
 // -----------------------------
@@ -64,7 +65,7 @@ func (s *Server) registerProtectedRoutes() {
 	api.Use(middleware.UserMiddleware(s.userRepo, 5*time.Minute))
 
 	// --- Auth routes ---
-	api.HandleFunc(authPrefix+"/refresh", s.authHandler.RefreshToken).Methods(http.MethodPost)
+	api.HandleFunc(authPrefix+"/logout", s.authHandler.Logout).Methods(http.MethodPost)
 
 	// --- User routes ---
 	api.HandleFunc(userPrefix+"/profile", s.userHandler.GetProfile).Methods(http.MethodGet)
